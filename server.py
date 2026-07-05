@@ -6,8 +6,11 @@ No database, no API routes yet — add them as real features get built.
 """
 import http.server
 import os
+import sys
 
 PORT = int(os.environ.get("PORT", 8199))
+if "--port" in sys.argv:
+    PORT = int(sys.argv[sys.argv.index("--port") + 1])
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 
