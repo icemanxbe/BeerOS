@@ -86,7 +86,15 @@ function computeBatchStats(batch, recipe) {
   const abvToDate = (og && fg) ? abvSimple(og, fg) : null;
   const daysSinceStart = Math.floor((new Date() - new Date(batch.startDate)) / 86400000);
 
-  return { og, ogIsActual, fg, attenuationToDate, abvToDate, daysSinceStart, recipeStats };
+  // Only project while actively fermenting, and only once we have two distinct
+  // readings to derive a rate from — a single point can't project a trend.
+  let projection = null;
+  if (batch.status === 'fermenting' && recipe && firstLog && lastLog && firstLog !== lastLog) {
+    const daysElapsed = (new Date(lastLog.date) - new Date(firstLog.date)) / 86400000;
+    projection = projectFermentation(og, fg, daysElapsed, recipe.yeast.attenuationLow, recipe.yeast.attenuationHigh);
+  }
+
+  return { og, ogIsActual, fg, attenuationToDate, abvToDate, daysSinceStart, recipeStats, projection };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

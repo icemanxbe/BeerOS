@@ -6,6 +6,24 @@
 const PAGE_SIZE = 20;
 const batchViewState = { search: '', statusFilter: 'all', sort: 'newest', page: 1, openBatchId: null };
 
+function addDaysISO(dateStr, days) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + Math.round(days));
+  return d.toISOString().slice(0, 10);
+}
+
+// Renders the projected-finish hint, collapsing "3–3 day(s)" / a repeated
+// date to a single value when rounding makes both ends of the range equal.
+function renderProjectionHint(projection, lastLogDate) {
+  const earliestDays = Math.round(projection.daysToEarliest);
+  const latestDays = Math.round(projection.daysToLatest);
+  const dayText = earliestDays === latestDays ? `~${earliestDays}` : `${earliestDays}–${latestDays}`;
+  const earliestDate = addDaysISO(lastLogDate, projection.daysToEarliest);
+  const latestDate = addDaysISO(lastLogDate, projection.daysToLatest);
+  const dateText = earliestDate === latestDate ? `around ${earliestDate}` : `around ${earliestDate} to ${latestDate}`;
+  return `<p class="stat-hint">Projected finish: FG ${projection.fgLow.toFixed(3)}–${projection.fgHigh.toFixed(3)}, roughly ${dayText} more day(s) at the current rate (${dateText}). A straight-line estimate from your recent readings, not a fermentation curve model — expect it to move as more readings come in.</p>`;
+}
+
 function renderBatchesPage() {
   if (batchViewState.openBatchId) return renderBatchDetail(batchViewState.openBatchId);
 
@@ -197,6 +215,7 @@ function renderBatchDetail(id) {
       <div class="stat"><span class="stat-val">${s.attenuationToDate !== null ? s.attenuationToDate.toFixed(0) + '%' : '—'}</span><span class="stat-label">Attenuation</span></div>
     </div>
     ${s.fg && b.status !== 'done' ? '<p class="stat-hint">"So far" numbers are a snapshot from your latest reading, not the final result — fermentation may still be in progress.</p>' : ''}
+    ${s.projection ? renderProjectionHint(s.projection, b.gravityLogs[b.gravityLogs.length - 1].date) : ''}
     ${!s.ogIsActual && s.og ? '<p class="stat-hint">OG shown is the recipe\'s computed target — log your first real gravity reading to replace it with the actual number for this batch.</p>' : ''}
     ${recipe ? `<div class="bjcp-range-note">Recipe target: OG ${s.recipeStats.og.toFixed(3)} &middot; ABV ${s.recipeStats.abv.toFixed(1)}% &middot; IBU ${s.recipeStats.ibu.toFixed(0)} &middot; SRM ${s.recipeStats.srm.toFixed(1)}</div>` : ''}
 

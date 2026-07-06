@@ -36,6 +36,18 @@ check('tinsethIBU', c.tinsethIBU([{ weightG: 28.35, aaPct: 6, minutes: 60 }], 20
 check('moreySRM', c.moreySRM([{ weightKg: 4.082, lovibond: 1.8 }, { weightKg: 0.4536, lovibond: 60 }], 20.82), 9.06, 0.1);
 check('srmToEBC', c.srmToEBC(9.06), 17.85, 0.05);
 
+// projectFermentation — worked example: OG 1.050, current SG 1.030 after 3
+// days -> rate 6.667 pts/day; attenuation range 70-80% -> FG range 1.010-1.015
+// -> 2.25 more days to the earliest (1.015) end, 3.0 to the latest (1.010) end.
+{
+  const proj = c.projectFermentation(1.050, 1.030, 3, 70, 80);
+  check('projectFermentation fgLow', proj.fgLow, 1.010, 0.0005);
+  check('projectFermentation fgHigh', proj.fgHigh, 1.015, 0.0005);
+  check('projectFermentation daysToEarliest', proj.daysToEarliest, 2.25, 0.01);
+  check('projectFermentation daysToLatest', proj.daysToLatest, 3.0, 0.01);
+  check('projectFermentation returns null when stalled', c.projectFermentation(1.050, 1.050, 3, 70, 80) === null ? 1 : 0, 1, 0);
+}
+
 // srmToHex — approximation for vessel-visualization only, not a colorimetric
 // standard (see comment in calculators.js). Check the real invariants: valid
 // hex format, and monotonic darkening as SRM rises.

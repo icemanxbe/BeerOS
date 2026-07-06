@@ -127,6 +127,25 @@ function refractometerCorrectedFG(origBrix, finalBrix) {
   return 1.0000 - 0.00085683 * origBrix + 0.0034941 * finalBrix;
 }
 
+// Projects an FG range (from the yeast's attenuation range) and how many more
+// days until each end of that range is reached, by linearly extrapolating the
+// fermentation rate seen between the first and latest gravity reading. This is
+// a deliberate simplification — real fermentation slows over time (S-curve,
+// not linear) — so it's framed as an estimate assuming the CURRENT rate holds,
+// not a kinetic model. Returns null if there's no measurable drop yet (too
+// early, or stalled).
+function projectFermentation(ogSg, currentSg, daysElapsed, attenuationLowPct, attenuationHighPct) {
+  if (daysElapsed <= 0) return null;
+  const ratePerDay = (ogSg - currentSg) * 1000 / daysElapsed;
+  if (ratePerDay <= 0) return null;
+  const fgAtLowAtt = fgFromAttenuation(ogSg, attenuationLowPct); // less attenuation -> higher FG, reached sooner
+  const fgAtHighAtt = fgFromAttenuation(ogSg, attenuationHighPct); // more attenuation -> lower FG, reached later
+  const currentPoints = (currentSg - 1) * 1000;
+  const daysToEarliest = Math.max(0, (currentPoints - (fgAtLowAtt - 1) * 1000) / ratePerDay);
+  const daysToLatest = Math.max(0, (currentPoints - (fgAtHighAtt - 1) * 1000) / ratePerDay);
+  return { fgLow: fgAtHighAtt, fgHigh: fgAtLowAtt, daysToEarliest, daysToLatest, ratePerDay };
+}
+
 // Brewhouse efficiency back-calculated from an actual brew day, KB §10.1
 function brewhouseEfficiency(measuredOG, batchVolumeL, grains) {
   const actualPoints = (measuredOG - 1) * 1000 * batchVolumeL;
@@ -147,6 +166,7 @@ if (typeof module !== 'undefined' && module.exports) {
     strikeWaterTempC,
     targetPitchCellsBillions, PITCH_RATE,
     refractometerCorrectedFG,
+    projectFermentation,
     brewhouseEfficiency
   };
 }
