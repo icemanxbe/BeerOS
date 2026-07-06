@@ -111,10 +111,10 @@ function renderRecipeDetail(id) {
     ${r.commercialInspiration ? `<div class="clone-disclaimer">This is a homebrew approximation inspired by ${r.name.replace(/-Inspired.*/, '')}'s real published ABV (${r.realAbv}%) and publicly known style/character — not the actual proprietary commercial recipe.</div>` : ''}
 
     <h2>Grain Bill</h2>
-    <table class="ingredient-table"><thead><tr><th>Fermentable</th><th>Weight</th><th>Potential</th><th>Color</th></tr></thead><tbody>${grainRows}</tbody></table>
+    <div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Fermentable</th><th>Weight</th><th>Potential</th><th>Color</th></tr></thead><tbody>${grainRows}</tbody></table></div>
 
     <h2>Hop Schedule</h2>
-    <table class="ingredient-table"><thead><tr><th>Hop</th><th>Weight</th><th>AA%</th><th>Time</th><th>Purpose</th></tr></thead><tbody>${hopRows}</tbody></table>
+    <div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Hop</th><th>Weight</th><th>AA%</th><th>Time</th><th>Purpose</th></tr></thead><tbody>${hopRows}</tbody></table></div>
     ${dryHopRow}
 
     <h2>Yeast</h2>

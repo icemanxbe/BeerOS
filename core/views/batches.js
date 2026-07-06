@@ -225,7 +225,7 @@ function renderBatchDetail(id) {
       <input type="number" id="log-sg" step="0.001" placeholder="1.050">
       <button onclick="submitLog('${b.id}')">Add Reading</button>
     </div>
-    ${b.gravityLogs.length ? `<table class="ingredient-table"><thead><tr><th>Date</th><th>SG</th><th></th></tr></thead><tbody>${logRows}</tbody></table>` : '<p class="empty-note">No readings yet. The first reading you log becomes this batch\'s OG.</p>'}
+    ${b.gravityLogs.length ? `<div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Date</th><th>SG</th><th></th></tr></thead><tbody>${logRows}</tbody></table></div>` : '<p class="empty-note">No readings yet. The first reading you log becomes this batch\'s OG.</p>'}
   </div>`;
 }
 
