@@ -62,7 +62,10 @@ function renderRecipeDetail(id) {
 
   return `<div class="recipe-detail">
     <button class="back-btn" onclick="closeRecipe()">&larr; Back to Recipe Library</button>
-    <h1>${r.name}</h1>
+    <div class="recipe-detail-top">
+      <h1>${r.name}</h1>
+      <button class="brew-btn" onclick="startBatchFromRecipe('${r.id}')">Brew This Recipe</button>
+    </div>
     <div class="recipe-style">${r.style} &middot; ${r.styleCode} &middot; ${REGION_LABELS[r.region] || r.region} &middot; ${r.difficulty}</div>
     <p class="recipe-desc">${r.description}</p>
     <div class="stat-row">

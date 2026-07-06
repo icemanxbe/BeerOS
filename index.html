@@ -8,29 +8,53 @@
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<div id="app">
-  <header>
-    <h1>BeerOS</h1>
-    <nav id="main-nav">
-      <button class="nav-btn active" data-page="recipes" onclick="switchPage('recipes')">Recipe Library</button>
-      <button class="nav-btn" data-page="tools" onclick="switchPage('tools')">Brewing Tools</button>
-    </nav>
-  </header>
-  <div id="recipes-mount" class="page"></div>
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-mark">🍺</div>
+    <span class="logo-text">BEEROS<span class="sub">Beer Brewing Companion</span></span>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-date" id="topbar-date"></span>
+  </div>
+</div>
+<div id="sidebar">
+  <div class="sidebar-section">Navigation</div>
+  <div class="nav-item active" onclick="switchPage('batches')" id="nav-batches"><span class="ni">⚗</span><span>My Batches</span></div>
+  <div class="nav-item" onclick="switchPage('recipes')" id="nav-recipes"><span class="ni">📜</span><span>Recipe Library</span></div>
+  <div class="nav-item" onclick="switchPage('tools')" id="nav-tools"><span class="ni">⚒</span><span>Brewing Tools</span></div>
+  <div class="sidebar-section" style="margin-top:8px">Active Batches</div>
+  <div class="sidebar-batch-list" id="sidebar-batches"></div>
+  <div class="sidebar-bottom">
+    <button class="btn-new-batch" onclick="openNewBatchModal()">+ New Batch</button>
+  </div>
+</div>
+<div id="main">
+  <div id="batches-mount" class="page"></div>
+  <div id="recipes-mount" class="page" style="display:none"></div>
   <div id="tools-mount" class="page" style="display:none"></div>
 </div>
+<div id="modal-root"></div>
 <script src="/core/domain/calculators.js"></script>
 <script src="/core/data/recipes.js"></script>
+<script src="/core/state/state.js"></script>
 <script src="/core/views/recipes.js"></script>
+<script src="/core/views/batches.js"></script>
 <script src="/core/tools/brewing-tools.js"></script>
 <script>
 function switchPage(page) {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.id === 'nav-' + page));
+  document.getElementById('batches-mount').style.display = page === 'batches' ? '' : 'none';
   document.getElementById('recipes-mount').style.display = page === 'recipes' ? '' : 'none';
   document.getElementById('tools-mount').style.display = page === 'tools' ? '' : 'none';
 }
-rerenderRecipesPage();
-rerenderTools();
+document.getElementById('topbar-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+(async function () {
+  await loadState();
+  rerenderBatchesPage();
+  rerenderRecipesPage();
+  rerenderTools();
+  renderSidebarBatches();
+})();
 </script>
 </body>
 </html>

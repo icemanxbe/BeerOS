@@ -1,10 +1,40 @@
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0a0a0b;color:#eee}
-#app{max-width:900px;margin:40px auto;padding:0 20px}
-header{text-align:center;margin-bottom:24px}
-#main-nav{display:flex;justify-content:center;gap:8px;margin-top:14px}
-.nav-btn{background:#151517;border:1px solid #2a2a2e;color:#999;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer}
-.nav-btn.active{background:#e8c46a;color:#0a0a0b;border-color:#e8c46a;font-weight:600}
-.tools-page h1,.recipes-page h1,.recipe-detail h1{font-size:20px;color:#e8c46a;margin-bottom:16px}
+
+/* ---- Shell: topbar + sidebar + main ---- */
+#topbar{position:fixed;top:0;left:0;right:0;height:56px;background:#111113;border-bottom:1px solid #2a2a2e;display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{font-size:22px}
+.logo-text{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-weight:800;font-size:16px;letter-spacing:1px;color:#e8c46a;display:flex;flex-direction:column;line-height:1.1}
+.logo-text .sub{font-size:9.5px;color:#999;font-weight:400;letter-spacing:.3px}
+.topbar-date{font-size:12px;color:#999}
+
+#sidebar{position:fixed;top:56px;left:0;bottom:0;width:220px;background:#0d0d0f;border-right:1px solid #2a2a2e;padding:16px 0;display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-section{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;padding:6px 18px;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:#ccc;font-size:13.5px}
+.nav-item .ni{font-size:15px;width:18px;text-align:center}
+.nav-item:hover{background:#151517}
+.nav-item.active{background:rgba(232,196,106,.12);color:#e8c46a;font-weight:600;border-right:2px solid #e8c46a}
+.sidebar-batch-list{padding:0 18px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.sidebar-batch-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#ccc;cursor:pointer;padding:4px 0}
+.sidebar-batch-item:hover{color:#e8c46a}
+.sidebar-batch-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sidebar-batch-dot.status-fermenting{background:#e8c46a}
+.sidebar-batch-dot.status-conditioning{background:#7aa040}
+.sidebar-batch-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-batch-empty{font-size:12px;color:#666;font-style:italic;padding:0 0}
+.sidebar-bottom{margin-top:auto;padding:14px 18px 0}
+.btn-new-batch{width:100%;background:#e8c46a;border:none;color:#0a0a0b;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer}
+
+#main{margin-left:220px;margin-top:56px;padding:28px 24px;max-width:900px}
+
+/* ---- Modal ---- */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#151517;border:1px solid #2a2a2e;border-radius:12px;padding:20px;width:340px;max-width:90vw}
+.modal h2{font-size:15px;color:#e8c46a;margin:0 0 12px}
+.modal select,.modal input{width:100%;box-sizing:border-box;background:#0a0a0b;border:1px solid #333;color:#eee;border-radius:6px;padding:8px 9px;font-size:13px;margin-bottom:10px}
+
+/* ---- Shared page/content styles ---- */
+.tools-page h1,.recipes-page h1,.recipe-detail h1,.batches-page h1,.batch-detail h1{font-size:20px;color:#e8c46a;margin-bottom:16px}
 
 .recipes-sub{color:#999;font-size:13px;margin-top:-10px;margin-bottom:16px}
 .region-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
@@ -20,20 +50,24 @@ header{text-align:center;margin-bottom:24px}
 .recipe-tags{display:flex;flex-wrap:wrap;gap:4px}
 .tag{font-size:9.5px;color:#999;background:#0a0a0b;border:1px solid #2a2a2e;padding:1px 7px;border-radius:8px}
 
-.recipe-detail{max-width:640px;margin:0 auto}
+.recipe-detail,.batch-detail{max-width:640px}
 .back-btn{background:none;border:none;color:#e8c46a;font-size:13px;cursor:pointer;padding:0;margin-bottom:14px}
 .recipe-desc{color:#ccc;font-size:13.5px;line-height:1.6}
 .stat-row{display:flex;gap:10px;margin:16px 0;flex-wrap:wrap}
 .stat{background:#151517;border:1px solid #2a2a2e;border-radius:8px;padding:10px 14px;text-align:center;flex:1;min-width:70px}
 .stat-val{display:block;font-size:16px;font-weight:700;color:#7aa040}
 .stat-label{display:block;font-size:10px;color:#999;letter-spacing:.5px;margin-top:2px}
+.stat-hint{font-size:11.5px;color:#c9a45e;background:#1e1a10;border:1px solid #3a2f1a;border-radius:8px;padding:8px 11px;margin:0 0 10px;line-height:1.5}
 .bjcp-range-note{font-size:11.5px;color:#999;margin-bottom:10px}
 .clone-disclaimer{font-size:12px;color:#c9a45e;background:#1e1a10;border:1px solid #3a2f1a;border-radius:8px;padding:10px 12px;margin-bottom:16px}
 .ingredient-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12.5px}
 .ingredient-table th{text-align:left;color:#999;font-weight:600;font-size:10.5px;letter-spacing:.4px;padding:4px 8px;border-bottom:1px solid #2a2a2e}
 .ingredient-table td{padding:6px 8px;border-bottom:1px solid #1a1a1c}
 .dry-hop-note{font-size:12px;color:#999;font-style:italic;margin:-8px 0 16px}
-.recipe-detail h2{font-size:14px;color:#e8c46a;margin:18px 0 8px}
+.recipe-detail h2,.batch-detail h2{font-size:14px;color:#e8c46a;margin:18px 0 8px}
+.recipe-detail-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brew-btn{background:#e8c46a;border:none;color:#0a0a0b;border-radius:6px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+
 .calc-card{background:#151517;border:1px solid #2a2a2e;border-radius:10px;padding:16px;margin-bottom:16px}
 .calc-card h2{font-size:15px;margin:0 0 10px;color:#e8c46a}
 .calc-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px}
@@ -42,3 +76,52 @@ header{text-align:center;margin-bottom:24px}
 .calc-card>button{background:#e8c46a;border:none;color:#0a0a0b;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;margin-bottom:10px}
 .calc-result{font-size:16px;font-weight:600;color:#7aa040;margin-top:8px}
 .calc-note{font-size:11px;color:#999;font-weight:400}
+
+.batch-controls{display:flex;gap:8px;margin-bottom:12px}
+.batch-controls input{flex:1;background:#151517;border:1px solid #2a2a2e;color:#eee;border-radius:6px;padding:8px 10px;font-size:13px}
+.batch-controls select{background:#151517;border:1px solid #2a2a2e;color:#eee;border-radius:6px;padding:8px 10px;font-size:13px}
+.status-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.batch-list{display:flex;flex-direction:column;gap:8px}
+.batch-row{display:flex;align-items:center;gap:14px;background:#151517;border:1px solid #2a2a2e;border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.batch-row:hover{border-color:#e8c46a}
+.batch-row-main{flex:1;min-width:0}
+.batch-name{font-size:14px;font-weight:600;color:#eee}
+.batch-sub{font-size:11.5px;color:#999;margin-top:2px}
+.batch-row-stats{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:#7aa040;font-weight:600;text-align:right}
+.batch-row-stats .dim{color:#666;font-weight:400}
+.status-pill{font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:10px;font-weight:600}
+.status-pill.status-fermenting{background:rgba(232,196,106,.15);color:#e8c46a}
+.status-pill.status-conditioning{background:rgba(122,160,64,.15);color:#7aa040}
+.status-pill.status-done{background:rgba(153,153,153,.15);color:#999}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;font-size:12.5px;color:#999}
+.pager button{background:#151517;border:1px solid #2a2a2e;color:#eee;border-radius:6px;padding:5px 12px;cursor:pointer}
+.pager button:disabled{opacity:.4;cursor:default}
+.pager-note{text-align:center;color:#666;font-size:12px;margin-top:14px}
+.empty-note{color:#999;font-size:13px;font-style:italic;margin-bottom:4px}
+.empty-state{background:#151517;border:1px solid #2a2a2e;border-radius:10px;padding:20px;margin-bottom:16px}
+.empty-sub{color:#999;font-size:12.5px;line-height:1.6;margin:6px 0 14px}
+.empty-cta{background:#e8c46a;border:none;color:#0a0a0b;border-radius:6px;padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer}
+.form-label{font-size:11px;color:#999;display:block;margin-bottom:3px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end}
+.form-actions button{background:#2a2a2e;border:none;color:#eee;border-radius:6px;padding:6px 12px;font-size:12.5px;cursor:pointer}
+.form-actions button.primary{background:#e8c46a;color:#0a0a0b;font-weight:600}
+
+.status-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:#999;margin:12px 0}
+.status-btn{background:#151517;border:1px solid #2a2a2e;color:#999;border-radius:14px;padding:4px 11px;font-size:11.5px;cursor:pointer;text-transform:capitalize}
+.status-btn.active{background:#e8c46a;color:#0a0a0b;border-color:#e8c46a;font-weight:600}
+.add-log-row{display:flex;gap:8px;margin-bottom:14px}
+.add-log-row input{background:#151517;border:1px solid #2a2a2e;color:#eee;border-radius:6px;padding:7px 9px;font-size:13px}
+.add-log-row button{background:#e8c46a;border:none;color:#0a0a0b;border-radius:6px;padding:7px 14px;font-size:12.5px;font-weight:600;cursor:pointer}
+.mini-btn{background:#2a2a2e;border:none;color:#999;border-radius:5px;padding:2px 7px;cursor:pointer;font-size:11px}
+
+/* ---- Responsive: collapse sidebar to a horizontal top strip on narrow screens ---- */
+@media (max-width:760px){
+  #sidebar{position:static;width:auto;height:auto;border-right:none;border-bottom:1px solid #2a2a2e;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 12px;gap:4px}
+  #sidebar .sidebar-section,#sidebar .sidebar-batch-list{display:none}
+  .nav-item{padding:7px 12px;border-radius:8px}
+  .nav-item.active{border-right:none}
+  .sidebar-bottom{margin:0 0 0 auto;padding:0}
+  .btn-new-batch{width:auto;padding:7px 14px}
+  #main{margin-left:0;margin-top:0;padding:20px 16px}
+  #topbar{position:static;height:auto;padding:14px 16px;flex-direction:column;gap:6px}
+}
