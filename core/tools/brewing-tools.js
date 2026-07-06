@@ -5,7 +5,8 @@
 const toolsState = {
   ogGrains: [{ weightKg: 4.5, ppg: 37 }],
   srmGrains: [{ weightKg: 4.5, lovibond: 2 }],
-  ibuHops: [{ weightG: 28, aaPct: 6, minutes: 60 }]
+  ibuHops: [{ weightG: 28, aaPct: 6, minutes: 60 }],
+  effGrains: [{ weightKg: 4.5, ppg: 37 }]
 };
 
 function fmt(n, dp) { return Number(n).toFixed(dp === undefined ? 3 : dp); }
@@ -19,6 +20,10 @@ function renderBrewingTools() {
     + renderSrmCard()
     + renderStrikeTempCard()
     + renderPrimingCard()
+    + renderAlkalinityCard()
+    + renderPitchRateCard()
+    + renderRefractometerCard()
+    + renderEfficiencyCard()
     + '</div>';
 }
 
@@ -148,6 +153,79 @@ function renderPrimingCard() {
     + '<div class="calc-result">' + fmt(grams, 1) + ' g</div>'
     + '</div>';
 }
+
+// ---- Residual alkalinity (water chemistry) ----
+function renderAlkalinityCard() {
+  const g = id => { const el = document.getElementById && document.getElementById(id); return el ? parseFloat(el.value) : null; };
+  const alk = g('ra-alk') ?? 120;
+  const ca = g('ra-ca') ?? 80;
+  const mg = g('ra-mg') ?? 12;
+  const ra = residualAlkalinity(alk, ca, mg);
+  return '<div class="calc-card"><h2>Residual Alkalinity</h2>'
+    + '<div class="calc-row">Total alkalinity <input type="number" id="ra-alk" value="' + alk + '" step="1" oninput="rerenderTools()"> ppm as CaCO3</div>'
+    + '<div class="calc-row">Calcium <input type="number" id="ra-ca" value="' + ca + '" step="1" oninput="rerenderTools()"> ppm</div>'
+    + '<div class="calc-row">Magnesium <input type="number" id="ra-mg" value="' + mg + '" step="1" oninput="rerenderTools()"> ppm</div>'
+    + '<div class="calc-result">RA = ' + fmt(ra, 1) + ' ppm as CaCO3</div>'
+    + '<div class="calc-note">Lower RA suits pale beers; higher RA suits dark, roasty beers.</div>'
+    + '</div>';
+}
+
+// ---- Yeast pitch rate ----
+function renderPitchRateCard() {
+  const g = id => { const el = document.getElementById && document.getElementById(id); return el ? parseFloat(el.value) : null; };
+  const vol = g('pitch-vol') ?? 20;
+  const og = g('pitch-og') ?? 1.050;
+  const styleEl = document.getElementById && document.getElementById('pitch-style');
+  const style = styleEl ? styleEl.value : 'ale';
+  const cells = targetPitchCellsBillions(vol, og, style);
+  return '<div class="calc-card"><h2>Yeast Pitch Rate</h2>'
+    + '<div class="calc-row">Batch volume <input type="number" id="pitch-vol" value="' + vol + '" step="0.1" oninput="rerenderTools()"> L</div>'
+    + '<div class="calc-row">OG <input type="number" id="pitch-og" value="' + og + '" step="0.001" oninput="rerenderTools()"></div>'
+    + '<div class="calc-row">Style <select id="pitch-style" onchange="rerenderTools()">'
+    + ['ale', 'lager'].map(t => '<option value="' + t + '"' + (t === style ? ' selected' : '') + '>' + t + '</option>').join('')
+    + '</select></div>'
+    + '<div class="calc-result">Target = ' + fmt(cells, 0) + ' billion cells</div>'
+    + '</div>';
+}
+
+// ---- Refractometer FG correction ----
+function renderRefractometerCard() {
+  const g = id => { const el = document.getElementById && document.getElementById(id); return el ? parseFloat(el.value) : null; };
+  const origBrix = g('refr-orig') ?? 15;
+  const finalBrix = g('refr-final') ?? 8;
+  const fg = refractometerCorrectedFG(origBrix, finalBrix);
+  return '<div class="calc-card"><h2>Refractometer FG Correction</h2>'
+    + '<div class="calc-row">Original Brix <input type="number" id="refr-orig" value="' + origBrix + '" step="0.1" oninput="rerenderTools()"> &deg;Bx</div>'
+    + '<div class="calc-row">Final Brix <input type="number" id="refr-final" value="' + finalBrix + '" step="0.1" oninput="rerenderTools()"> &deg;Bx</div>'
+    + '<div class="calc-result">Corrected FG = ' + fmt(fg, 4) + '</div>'
+    + '<div class="calc-note">Corrects for alcohol skewing a raw refractometer Brix reading (Sean Terrill formula).</div>'
+    + '</div>';
+}
+
+// ---- Brewhouse efficiency (back-calculated from an actual brew day) ----
+function renderEfficiencyCard() {
+  const rows = toolsState.effGrains.map((g, i) =>
+    '<div class="calc-row">'
+    + `<input type="number" step="0.01" value="${g.weightKg}" oninput="updateEffGrain(${i},'weightKg',this.value)"> kg`
+    + `<input type="number" step="1" value="${g.ppg}" oninput="updateEffGrain(${i},'ppg',this.value)"> PPG`
+    + `<button onclick="removeEffGrain(${i})">&times;</button>`
+    + '</div>'
+  ).join('');
+  const g = id => { const el = document.getElementById && document.getElementById(id); return el ? parseFloat(el.value) : null; };
+  const measuredOG = g('eff-og') ?? 1.050;
+  const vol = g('eff-vol') ?? 20;
+  const eff = brewhouseEfficiency(measuredOG, vol, toolsState.effGrains);
+  return '<div class="calc-card"><h2>Brewhouse Efficiency (actual brew day)</h2>'
+    + rows
+    + '<button onclick="addEffGrain()">+ grain</button>'
+    + '<div class="calc-row">Measured OG <input type="number" id="eff-og" value="' + measuredOG + '" step="0.001" oninput="rerenderTools()"></div>'
+    + '<div class="calc-row">Batch volume <input type="number" id="eff-vol" value="' + vol + '" step="0.1" oninput="rerenderTools()"> L</div>'
+    + '<div class="calc-result">Efficiency = ' + fmt(eff * 100, 1) + '%</div>'
+    + '</div>';
+}
+function addEffGrain() { toolsState.effGrains.push({ weightKg: 1, ppg: 37 }); rerenderTools(); }
+function removeEffGrain(i) { toolsState.effGrains.splice(i, 1); rerenderTools(); }
+function updateEffGrain(i, field, val) { toolsState.effGrains[i][field] = parseFloat(val) || 0; rerenderTools(); }
 
 function rerenderTools() {
   const mount = document.getElementById('tools-mount');
