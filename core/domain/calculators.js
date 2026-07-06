@@ -69,6 +69,18 @@ function moreySRM(grains, volumeL) {
 function srmToEBC(srm) {
   return srm * 1.97;
 }
+// Approximate SRM -> hex color, for vessel-liquid visualization only — NOT a
+// precise colorimetric standard (real beer color also depends on turbidity/
+// lighting). Exponential falloff per RGB channel, a common approximation
+// pattern in homebrew color tools; clamped to the 1-40 SRM chart range.
+function srmToHex(srm) {
+  const s = Math.max(1, Math.min(srm, 40));
+  const r = Math.round(255 * Math.pow(0.975, s));
+  const g = Math.round(255 * Math.pow(0.88, s));
+  const b = Math.round(255 * Math.pow(0.7, s));
+  const hex = n => n.toString(16).padStart(2, '0');
+  return '#' + hex(r) + hex(g) + hex(b);
+}
 
 // Residual Alkalinity, KB §6.1 (Kolbach, via Palmer) — ppm as CaCO3 throughout
 function residualAlkalinity(totalAlkalinityPpm, caPpm, mgPpm) {
@@ -129,7 +141,7 @@ if (typeof module !== 'undefined' && module.exports) {
     sgToPlato, realExtract, realAttenuation,
     abvSimple, abvHighGravity,
     tinsethBignessFactor, tinsethBoilTimeFactor, tinsethUtilization, tinsethIBU,
-    moreySRM, srmToEBC,
+    moreySRM, srmToEBC, srmToHex,
     residualAlkalinity,
     residualCO2FromTempC, primingSugarGrams, PRIMING_CO2_FRACTION,
     strikeWaterTempC,

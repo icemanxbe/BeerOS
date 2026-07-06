@@ -5,9 +5,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>BeerOS · Beer Brewing Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
+<div id="app">
 <div id="topbar">
   <div class="logo">
     <div class="logo-mark">🍺</div>
@@ -25,7 +29,7 @@
   <div class="sidebar-section" style="margin-top:8px">Active Batches</div>
   <div class="sidebar-batch-list" id="sidebar-batches"></div>
   <div class="sidebar-bottom">
-    <button class="btn-new-batch" onclick="openNewBatchModal()">+ New Batch</button>
+    <button class="btn-new-batch" onclick="openNewBatchModal()">+<span> New Batch</span></button>
   </div>
 </div>
 <div id="main">
@@ -33,10 +37,12 @@
   <div id="recipes-mount" class="page" style="display:none"></div>
   <div id="tools-mount" class="page" style="display:none"></div>
 </div>
+</div>
 <div id="modal-root"></div>
 <script src="/core/domain/calculators.js"></script>
 <script src="/core/data/recipes.js"></script>
 <script src="/core/state/state.js"></script>
+<script src="/core/views/vessel.js"></script>
 <script src="/core/views/recipes.js"></script>
 <script src="/core/views/batches.js"></script>
 <script src="/core/tools/brewing-tools.js"></script>

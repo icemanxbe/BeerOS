@@ -36,6 +36,13 @@ check('tinsethIBU', c.tinsethIBU([{ weightG: 28.35, aaPct: 6, minutes: 60 }], 20
 check('moreySRM', c.moreySRM([{ weightKg: 4.082, lovibond: 1.8 }, { weightKg: 0.4536, lovibond: 60 }], 20.82), 9.06, 0.1);
 check('srmToEBC', c.srmToEBC(9.06), 17.85, 0.05);
 
+// srmToHex — approximation for vessel-visualization only, not a colorimetric
+// standard (see comment in calculators.js). Check the real invariants: valid
+// hex format, and monotonic darkening as SRM rises.
+check('srmToHex format', /^#[0-9a-f]{6}$/.test(c.srmToHex(10)) ? 1 : 0, 1, 0);
+const paleR = parseInt(c.srmToHex(2).slice(1, 3), 16), darkR = parseInt(c.srmToHex(40).slice(1, 3), 16);
+check('srmToHex darkens monotonically with SRM', paleR > darkR ? 1 : 0, 1, 0);
+
 // Residual Alkalinity — KB §6.1: TotalAlk 120, Ca 80, Mg 12 -> 95.4
 check('residualAlkalinity', c.residualAlkalinity(120, 80, 12), 95.4, 0.05);
 

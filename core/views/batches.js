@@ -35,15 +35,18 @@ function renderBatchesPage() {
     const recipe = BUILTIN_RECIPES().find(r => r.id === b.recipeId);
     const s = computeBatchStats(b, recipe);
     return `<div class="batch-row" onclick="openBatch('${b.id}')">
+      <div class="batch-row-vessel">${renderVesselSVG(b, recipe, 'sm')}</div>
       <div class="batch-row-main">
         <div class="batch-name">${b.name}</div>
         <div class="batch-sub">${b.recipeName || 'Custom'} &middot; started ${b.startDate} &middot; ${s.daysSinceStart}d ago</div>
       </div>
-      <div class="batch-row-stats">
-        ${s.og ? `<span>OG ${s.og.toFixed(3)}${s.ogIsActual ? '' : ' (est.)'}</span>` : ''}
-        ${s.abvToDate !== null ? `<span>${s.abvToDate.toFixed(1)}% ABV so far</span>` : '<span class="dim">no readings yet</span>'}
+      <div class="batch-row-meta">
+        <div class="batch-row-stats">
+          ${s.og ? `<span>OG ${s.og.toFixed(3)}${s.ogIsActual ? '' : ' (est.)'}</span>` : ''}
+          ${s.abvToDate !== null ? `<span>${s.abvToDate.toFixed(1)}% ABV so far</span>` : '<span class="dim">no readings yet</span>'}
+        </div>
+        <span class="status-pill status-${b.status}">${b.status}</span>
       </div>
-      <span class="status-pill status-${b.status}">${b.status}</span>
     </div>`;
   }).join('');
 
@@ -147,14 +150,18 @@ function renderBatchDetail(id) {
 
   return `<div class="batch-detail">
     <button class="back-btn" onclick="closeBatch()">&larr; Back to My Batches</button>
-    <h1>${b.name}</h1>
-    <div class="recipe-style">${b.recipeName || 'Custom'} &middot; ${b.volumeL} L &middot; started ${b.startDate} &middot; ${s.daysSinceStart} days ago</div>
-
-    <div class="status-row">
-      Status:
-      ${['fermenting', 'conditioning', 'done'].map(st =>
-        `<button class="status-btn${b.status === st ? ' active' : ''}" onclick="setBatchStatus('${b.id}','${st}');rerenderBatchesPage();renderSidebarBatches()">${st}</button>`
-      ).join('')}
+    <div class="batch-detail-top">
+      <div class="vessel-hero">${renderVesselSVG(b, recipe, 'lg')}</div>
+      <div class="batch-detail-head">
+        <h1>${b.name}</h1>
+        <div class="recipe-style">${b.recipeName || 'Custom'} &middot; ${b.volumeL} L &middot; started ${b.startDate} &middot; ${s.daysSinceStart} days ago</div>
+        <div class="status-row">
+          Status:
+          ${['fermenting', 'conditioning', 'done'].map(st =>
+            `<button class="status-btn${b.status === st ? ' active' : ''}" onclick="setBatchStatus('${b.id}','${st}');rerenderBatchesPage();renderSidebarBatches()">${st}</button>`
+          ).join('')}
+        </div>
+      </div>
     </div>
 
     <div class="stat-row">
