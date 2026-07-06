@@ -51,6 +51,38 @@ function setRecipeFilter(region) { recipeViewState.filterRegion = region; rerend
 function openRecipe(id) { recipeViewState.openRecipeId = id; rerenderRecipesPage(); }
 function closeRecipe() { recipeViewState.openRecipeId = null; rerenderRecipesPage(); }
 
+// Derives a numbered brewing checklist from the recipe's own already-verified
+// fields (mash temp, hop schedule timing, yeast attenuation/temp, dry hop) —
+// generated, not hand-authored per recipe, so it can't drift out of sync with
+// the grain-bill/hop-schedule tables shown alongside it.
+function renderRecipeSteps(r) {
+  const steps = [];
+  steps.push(`Mill and mash all grains at ${r.mashTempC}&deg;C for 60 minutes.`);
+  steps.push('Lauter/sparge to collect your full pre-boil volume, then bring the wort to a boil.');
+
+  const boilMinutes = Math.max(...r.hopSchedule.map(h => h.minutes));
+  const sortedHops = r.hopSchedule.slice().sort((a, b) => b.minutes - a.minutes);
+  sortedHops.forEach(h => {
+    steps.push(`With ${h.minutes} minute${h.minutes === 1 ? '' : 's'} left in a ${boilMinutes}-minute boil, add ${h.weightG}g ${h.name}${h.purpose ? ` (${h.purpose})` : ''}.`);
+  });
+
+  steps.push(`Chill the wort to fermentation temperature (${r.fermentTempC.low}-${r.fermentTempC.high}&deg;C) and pitch ${r.yeast.name}.`);
+  steps.push(`Ferment at ${r.fermentTempC.low}-${r.fermentTempC.high}&deg;C until gravity is stable across multiple readings (expect roughly ${r.yeast.attenuationLow}-${r.yeast.attenuationHigh}% apparent attenuation from this yeast).`);
+
+  if (r.yeast.tempLowC <= 15) {
+    steps.push('Once fermentation is complete, raise the temperature to 18-20&deg;C for 1-3 days (a diacetyl rest) before cold-crashing.');
+    steps.push('Cold-crash and lager near 0-4&deg;C for at least 2-4 weeks before packaging.');
+  }
+
+  if (r.dryHop) {
+    const dh = r.dryHop.map(d => `${d.weightG}g ${d.name}`).join(', ');
+    steps.push(`Confirm fermentation is fully complete (stable gravity over several days) before dry hopping with ${dh} for 2-5 days — dry hopping too early risks hop creep restarting fermentation.`);
+  }
+
+  steps.push('Package (bottle or keg) and carbonate to style.');
+  return steps;
+}
+
 function renderRecipeDetail(id) {
   const r = BUILTIN_RECIPES().find(x => x.id === id);
   if (!r) return '<p>Recipe not found.</p>';
@@ -88,9 +120,9 @@ function renderRecipeDetail(id) {
     <h2>Yeast</h2>
     <p>${r.yeast.name} &middot; ${r.yeast.attenuationLow}-${r.yeast.attenuationHigh}% attenuation &middot; ${r.yeast.tempLowC}-${r.yeast.tempHighC}&deg;C${r.yeast.notes ? `<br><em>${r.yeast.notes}</em>` : ''}</p>
 
-    <h2>Process Notes</h2>
-    <p>Mash at ${r.mashTempC}&deg;C &middot; Ferment ${r.fermentTempC.low}-${r.fermentTempC.high}&deg;C</p>
-    <p>${r.processNotes}</p>
+    <h2>Brewing Steps</h2>
+    <ol class="step-list">${renderRecipeSteps(r).map(step => `<li>${step}</li>`).join('')}</ol>
+    ${r.processNotes ? `<p class="stat-hint">${r.processNotes}</p>` : ''}
   </div>`;
 }
 
