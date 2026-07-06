@@ -25,6 +25,7 @@
   <div class="sidebar-section">Navigation</div>
   <div class="nav-item active" onclick="switchPage('batches')" id="nav-batches"><span class="ni">⚗</span><span>My Batches</span></div>
   <div class="nav-item" onclick="switchPage('recipes')" id="nav-recipes"><span class="ni">📜</span><span>Recipe Library</span></div>
+  <div class="nav-item" onclick="switchPage('malts')" id="nav-malts"><span class="ni">🌾</span><span>Malt &amp; Grain Library</span></div>
   <div class="nav-item" onclick="switchPage('tools')" id="nav-tools"><span class="ni">⚒</span><span>Brewing Tools</span></div>
   <div class="sidebar-section" style="margin-top:8px">Active Batches</div>
   <div class="sidebar-batch-list" id="sidebar-batches"></div>
@@ -35,15 +36,18 @@
 <div id="main">
   <div id="batches-mount" class="page"></div>
   <div id="recipes-mount" class="page" style="display:none"></div>
+  <div id="malts-mount" class="page" style="display:none"></div>
   <div id="tools-mount" class="page" style="display:none"></div>
 </div>
 </div>
 <div id="modal-root"></div>
 <script src="/core/domain/calculators.js"></script>
 <script src="/core/data/recipes.js"></script>
+<script src="/core/data/malts.js"></script>
 <script src="/core/state/state.js"></script>
 <script src="/core/views/vessel.js"></script>
 <script src="/core/views/recipes.js"></script>
+<script src="/core/views/malts.js"></script>
 <script src="/core/views/batches.js"></script>
 <script src="/core/tools/brewing-tools.js"></script>
 <script>
@@ -51,6 +55,7 @@ function switchPage(page) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.id === 'nav-' + page));
   document.getElementById('batches-mount').style.display = page === 'batches' ? '' : 'none';
   document.getElementById('recipes-mount').style.display = page === 'recipes' ? '' : 'none';
+  document.getElementById('malts-mount').style.display = page === 'malts' ? '' : 'none';
   document.getElementById('tools-mount').style.display = page === 'tools' ? '' : 'none';
 }
 document.getElementById('topbar-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -58,6 +63,7 @@ document.getElementById('topbar-date').textContent = new Date().toLocaleDateStri
   await loadState();
   rerenderBatchesPage();
   rerenderRecipesPage();
+  rerenderMaltsPage();
   rerenderTools();
   renderSidebarBatches();
 })();
