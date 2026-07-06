@@ -28,6 +28,7 @@
   <div class="nav-item" onclick="switchPage('malts')" id="nav-malts"><span class="ni">🌾</span><span>Malt &amp; Grain Library</span></div>
   <div class="nav-item" onclick="switchPage('hops')" id="nav-hops"><span class="ni">🌿</span><span>Hop Library</span></div>
   <div class="nav-item" onclick="switchPage('yeasts')" id="nav-yeasts"><span class="ni">🧫</span><span>Yeast Library</span></div>
+  <div class="nav-item" onclick="switchPage('water')" id="nav-water"><span class="ni">💧</span><span>Water Chemistry</span></div>
   <div class="nav-item" onclick="switchPage('tools')" id="nav-tools"><span class="ni">⚒</span><span>Brewing Tools</span></div>
   <div class="sidebar-section" style="margin-top:8px">Active Batches</div>
   <div class="sidebar-batch-list" id="sidebar-batches"></div>
@@ -41,6 +42,7 @@
   <div id="malts-mount" class="page" style="display:none"></div>
   <div id="hops-mount" class="page" style="display:none"></div>
   <div id="yeasts-mount" class="page" style="display:none"></div>
+  <div id="water-mount" class="page" style="display:none"></div>
   <div id="tools-mount" class="page" style="display:none"></div>
 </div>
 </div>
@@ -50,12 +52,14 @@
 <script src="/core/data/malts.js"></script>
 <script src="/core/data/hops.js"></script>
 <script src="/core/data/yeasts.js"></script>
+<script src="/core/data/water-profiles.js"></script>
 <script src="/core/state/state.js"></script>
 <script src="/core/views/vessel.js"></script>
 <script src="/core/views/recipes.js"></script>
 <script src="/core/views/malts.js"></script>
 <script src="/core/views/hops.js"></script>
 <script src="/core/views/yeasts.js"></script>
+<script src="/core/views/water.js"></script>
 <script src="/core/views/batches.js"></script>
 <script src="/core/tools/brewing-tools.js"></script>
 <script>
@@ -66,6 +70,7 @@ function switchPage(page) {
   document.getElementById('malts-mount').style.display = page === 'malts' ? '' : 'none';
   document.getElementById('hops-mount').style.display = page === 'hops' ? '' : 'none';
   document.getElementById('yeasts-mount').style.display = page === 'yeasts' ? '' : 'none';
+  document.getElementById('water-mount').style.display = page === 'water' ? '' : 'none';
   document.getElementById('tools-mount').style.display = page === 'tools' ? '' : 'none';
 }
 document.getElementById('topbar-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -76,6 +81,7 @@ document.getElementById('topbar-date').textContent = new Date().toLocaleDateStri
   rerenderMaltsPage();
   rerenderHopsPage();
   rerenderYeastsPage();
+  rerenderWaterPage();
   rerenderTools();
   renderSidebarBatches();
 })();
