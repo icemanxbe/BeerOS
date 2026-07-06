@@ -1,2 +1,12 @@
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0a0a0b;color:#eee}
-#app{max-width:640px;margin:80px auto;padding:0 20px;text-align:center}
+#app{max-width:640px;margin:40px auto;padding:0 20px}
+header{text-align:center;margin-bottom:24px}
+.tools-page h1{font-size:20px;color:#e8c46a;margin-bottom:16px}
+.calc-card{background:#151517;border:1px solid #2a2a2e;border-radius:10px;padding:16px;margin-bottom:16px}
+.calc-card h2{font-size:15px;margin:0 0 10px;color:#e8c46a}
+.calc-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:13px}
+.calc-row input,.calc-row select{background:#0a0a0b;border:1px solid #333;color:#eee;border-radius:6px;padding:4px 6px;width:70px;font-size:13px}
+.calc-row button{background:#2a2a2e;border:none;color:#eee;border-radius:6px;padding:2px 8px;cursor:pointer}
+.calc-card>button{background:#e8c46a;border:none;color:#0a0a0b;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;margin-bottom:10px}
+.calc-result{font-size:16px;font-weight:600;color:#7aa040;margin-top:8px}
+.calc-note{font-size:11px;color:#999;font-weight:400}
