@@ -65,6 +65,7 @@ function renderBatchesPage() {
         <option value="oldest"${batchViewState.sort === 'oldest' ? ' selected' : ''}>Oldest first</option>
         <option value="name"${batchViewState.sort === 'name' ? ' selected' : ''}>Name</option>
       </select>
+      ${APP.batches.length ? '<button class="region-btn" onclick="exportBatchesCSV()">Export CSV</button>' : ''}
     </div>
     <div class="status-filters">
       <button class="region-btn${batchViewState.statusFilter === 'all' ? ' active' : ''}" onclick="setBatchStatusFilter('all')">All (${APP.batches.length})</button>
@@ -79,6 +80,31 @@ function renderBatchesPage() {
     </div>` : `<div class="batch-list">${rows}</div>`}
     ${pagerHtml}
   </div>`;
+}
+
+// One row per gravity log (denormalized) so a spreadsheet can group/filter
+// either by batch or by reading; batches with no logs still get one row.
+function batchesToCSV() {
+  const esc = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const header = ['Batch Name', 'Recipe', 'Status', 'Start Date', 'Volume (L)', 'Log Date', 'SG'];
+  const rows = [header];
+  APP.batches.forEach(b => {
+    const base = [b.name, b.recipeName || 'Custom', b.status, b.startDate, b.volumeL];
+    if (!b.gravityLogs.length) rows.push([...base, '', '']);
+    else b.gravityLogs.forEach(g => rows.push([...base, g.date, g.sg]));
+  });
+  return rows.map(r => r.map(esc).join(',')).join('\r\n');
+}
+function exportBatchesCSV() {
+  const blob = new Blob([batchesToCSV()], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'beeros-batches-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 function setBatchSearch(v) { batchViewState.search = v; batchViewState.page = 1; rerenderBatchesPage(true); }
