@@ -9,11 +9,28 @@
 </head>
 <body>
 <div id="app">
-  <header><h1>BeerOS</h1></header>
-  <div id="tools-mount"></div>
+  <header>
+    <h1>BeerOS</h1>
+    <nav id="main-nav">
+      <button class="nav-btn active" data-page="recipes" onclick="switchPage('recipes')">Recipe Library</button>
+      <button class="nav-btn" data-page="tools" onclick="switchPage('tools')">Brewing Tools</button>
+    </nav>
+  </header>
+  <div id="recipes-mount" class="page"></div>
+  <div id="tools-mount" class="page" style="display:none"></div>
 </div>
 <script src="/core/domain/calculators.js"></script>
+<script src="/core/data/recipes.js"></script>
+<script src="/core/views/recipes.js"></script>
 <script src="/core/tools/brewing-tools.js"></script>
-<script>rerenderTools();</script>
+<script>
+function switchPage(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.getElementById('recipes-mount').style.display = page === 'recipes' ? '' : 'none';
+  document.getElementById('tools-mount').style.display = page === 'tools' ? '' : 'none';
+}
+rerenderRecipesPage();
+rerenderTools();
+</script>
 </body>
 </html>
