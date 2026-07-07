@@ -58,11 +58,11 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   const insights = getAdvisorInsights(batch, recipe, stats);
   check('flat + below-range attenuation -> warning', firstLevel(insights), 'warning');
   check('warning insight has a suggested next step', insights[0].action, 'Double-check pitch rate and temperature, and consider a gentle rouse before assuming it\'s finished.');
-  check('warning detail has no temp note without sensor data', insights[0].detail.includes('logged temperature'), false);
+  check('warning detail has no temp note without sensor data', insights[0].detail.includes('recent temperature'), false);
 }
 
-// Same stall, but with a real cold sensor reading (below recipe.fermentTempC.low)
-// on the latest log -> the warning names it as a plausible explanation
+// Same stall, but with a single real cold sensor reading (below
+// recipe.fermentTempC.low) -> the warning names it as a plausible explanation
 {
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.025 }, { date: '2026-06-11', sg: 1.0245, tempC: 14.2 }] };
   const stats = { daysSinceStart: 10, attenuationToDate: 51 };
@@ -76,7 +76,45 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.025 }, { date: '2026-06-11', sg: 1.0245, tempC: 19.0 }] };
   const stats = { daysSinceStart: 10, attenuationToDate: 51 };
   const insights = getAdvisorInsights(batch, recipe, stats);
-  check('in-range reading -> no temp note', insights[0].detail.includes('logged temperature'), false);
+  check('in-range reading -> no temp note', insights[0].detail.includes('recent temperature'), false);
+}
+
+// A single cold-looking reading buried among several in-range ones (e.g. a
+// fridge/compressor cycling) -> the median of the last 3 readings stays
+// in range, so no note (this is exactly the false-positive review feedback
+// flagged: sensors log far more often than a hydrometer, so "latest reading"
+// alone isn't representative)
+{
+  const batch = {
+    ...baseBatch,
+    gravityLogs: [
+      { date: '2026-06-01', sg: 1.050 },
+      { date: '2026-06-10', sg: 1.025, tempC: 19.2 },
+      { date: '2026-06-10', sg: 1.0248, tempC: 19.0 },
+      { date: '2026-06-11', sg: 1.0245, tempC: 14.2 } // one-off blip
+    ]
+  };
+  const stats = { daysSinceStart: 10, attenuationToDate: 51 };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('one-off cold blip among in-range readings -> no note (median filters it out)', insights[0].detail.includes('recent temperature'), false);
+}
+
+// A genuinely sustained cold run (last 3 readings all below range) -> flagged,
+// using the median of those readings rather than just the latest one
+{
+  const batch = {
+    ...baseBatch,
+    gravityLogs: [
+      { date: '2026-06-01', sg: 1.050 },
+      { date: '2026-06-10', sg: 1.025, tempC: 15.0 },
+      { date: '2026-06-10', sg: 1.0248, tempC: 14.0 },
+      { date: '2026-06-11', sg: 1.0245, tempC: 14.5 }
+    ]
+  };
+  const stats = { daysSinceStart: 10, attenuationToDate: 51 };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('sustained cold run -> flagged using the median (14.5, not the max/min)', insights[0].detail.includes('14.5°C, below this recipe\'s 18-20°C range'), true);
+  check('wording is evidence-oriented ("contributing to"), not causal ("could explain it")', insights[0].detail.includes('this could be contributing to the slowdown'), true);
 }
 
 // Still dropping, past due day, below range -> info

@@ -38,13 +38,20 @@ function getPersonalPaceInsight(batch, recipe, stats) {
 // temperature insight: a cold reading is one of the most common real
 // explanations for a stalled fermentation, so when the data is there, name
 // it as evidence instead of leaving the brewer to guess. Silent whenever no
-// device is reporting temperature, or the latest reading is in range.
+// device is reporting temperature, or the recent reading is in range.
+//
+// Uses the median of the last few readings rather than the single latest
+// one — a real sensor can log far more often than a hydrometer, and a
+// single point can just be a fridge/compressor cycling rather than the
+// actual fermentation temperature.
+const ADVISOR_TEMP_WINDOW = 3;
 function getColdTempNote(batch, recipe) {
   const withTemp = batch.gravityLogs.filter(g => g.tempC !== undefined && g.tempC !== null);
   if (!withTemp.length) return '';
-  const latestTemp = withTemp[withTemp.length - 1].tempC;
-  if (latestTemp >= recipe.fermentTempC.low) return '';
-  return ` Your last logged temperature was ${latestTemp.toFixed(1)}°C, below this recipe's ${recipe.fermentTempC.low}-${recipe.fermentTempC.high}°C range — that alone could explain it.`;
+  const recent = withTemp.slice(-ADVISOR_TEMP_WINDOW).map(g => g.tempC).sort((a, b) => a - b);
+  const recentTemp = recent[Math.floor(recent.length / 2)];
+  if (recentTemp >= recipe.fermentTempC.low) return '';
+  return ` Your recent temperature readings have been around ${recentTemp.toFixed(1)}°C, below this recipe's ${recipe.fermentTempC.low}-${recipe.fermentTempC.high}°C range — this could be contributing to the slowdown.`;
 }
 
 // The next unchecked NON-TRIVIAL step in the recipe's own chronological order
