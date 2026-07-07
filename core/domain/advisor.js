@@ -9,6 +9,7 @@ const ADVISOR_FLAT_SG_DELTA = 0.002; // same threshold as deriveBatchStatus in s
 const ADVISOR_ATTENUATION_SLACK = 3; // percentage points below the yeast's low end still counted as "in range"
 const ADVISOR_TRIVIAL_STEP_KEYS = ['brew-day', 'check-fermentation']; // one-off "did this happen" boxes many brewers won't bother ticking — never gate a later reminder on them
 const ADVISOR_DUE_STEP_KEYS = ['dry-hop', 'diacetyl-rest', 'package']; // confirm-complete/lager are covered by the gravity-based rules below
+const ADVISOR_UPCOMING_WINDOW_DAYS = 2; // "coming up in N days" starts this far ahead of the step's own day
 
 // The next unchecked NON-TRIVIAL step in the recipe's own chronological order
 // (getRecipeSteps already returns steps sorted by day), skipping brew-day/
@@ -21,17 +22,21 @@ function nextGatedStep(batch, steps) {
 }
 
 // Surfaces the next actionable step (dry hop / diacetyl rest / package) once
-// its day has arrived, but only when it's genuinely NEXT — since
-// nextGatedStep respects chronological order, this can't fire "dry hop"
-// before "confirm fermentation complete" is actually checked, matching the
-// step's own warning that dry hopping too early risks restarting fermentation.
+// it's due or coming up within a couple of days, but only when it's
+// genuinely NEXT — since nextGatedStep respects chronological order, this
+// can't fire "dry hop" before "confirm fermentation complete" is actually
+// checked, matching the step's own warning that dry hopping too early risks
+// restarting fermentation.
 function getDueStepInsight(batch, recipe, stats, steps) {
   const next = nextGatedStep(batch, steps);
-  if (!next || !ADVISOR_DUE_STEP_KEYS.includes(next.key) || stats.daysSinceStart < next.day) return null;
-  return {
-    level: 'info', title: `${next.title} is due`,
-    detail: `Based on this recipe's schedule, day ${next.day} is when to ${next.desc.charAt(0).toLowerCase()}${next.desc.slice(1)}`
-  };
+  if (!next || !ADVISOR_DUE_STEP_KEYS.includes(next.key)) return null;
+  const daysUntil = next.day - stats.daysSinceStart;
+  if (daysUntil > ADVISOR_UPCOMING_WINDOW_DAYS) return null;
+  const action = `${next.desc.charAt(0).toLowerCase()}${next.desc.slice(1)}`;
+  if (daysUntil <= 0) {
+    return { level: 'info', title: `${next.title} is due`, detail: `Based on this recipe's schedule, day ${next.day} is when to ${action}` };
+  }
+  return { level: 'info', title: `${next.title} coming up in ${daysUntil} day${daysUntil === 1 ? '' : 's'}`, detail: `Based on this recipe's schedule, day ${next.day} is when to ${action}` };
 }
 
 function getAdvisorInsights(batch, recipe, stats) {
@@ -41,19 +46,17 @@ function getAdvisorInsights(batch, recipe, stats) {
   const daysSinceStart = stats.daysSinceStart;
 
   if (!logs.length) {
-    if (daysSinceStart >= 2) {
-      return [{
-        level: 'info', title: 'No gravity readings yet',
-        detail: `It's been ${daysSinceStart} day(s) since you started this batch. Log a reading to start tracking real progress instead of the recipe's estimate.`
-      }];
-    }
-    return [];
+    if (daysSinceStart < 2) return [];
+    return [{
+      level: 'info', title: 'No gravity readings yet',
+      detail: `It's been ${daysSinceStart} day(s) since you started this batch. Log a reading to start tracking real progress instead of the recipe's estimate.`
+    }];
   }
 
   if (!recipe) return []; // no yeast attenuation range to reason about without a recipe
 
   const steps = getRecipeSteps(recipe);
-  const dueStep = getDueStepInsight(batch, recipe, stats, steps);
+  const insights = [];
 
   const last = logs[logs.length - 1];
   const prev = logs.length >= 2 ? logs[logs.length - 2] : null;
@@ -64,27 +67,40 @@ function getAdvisorInsights(batch, recipe, stats) {
   const completeStep = steps.find(s => s.key === 'confirm-complete' || s.key === 'lager');
   const completeStepDue = !!completeStep && daysSinceStart >= completeStep.day;
 
-  if (att === null) return dueStep ? [dueStep] : [];
+  if (att !== null) {
+    if (isFlat && att >= attenuationLow - ADVISOR_ATTENUATION_SLACK) {
+      insights.push({
+        level: 'good', title: 'Looks done fermenting',
+        detail: `Gravity hasn't moved in your last two readings (${prev.sg.toFixed(3)} → ${last.sg.toFixed(3)}), and attenuation is ${att.toFixed(0)}% — within this yeast's usual ${attenuationLow}-${attenuationHigh}% range.${completeStep ? ` Check the "${completeStep.title}" step below if you haven't.` : ''}`
+      });
+    } else if (isFlat && att < attenuationLow - ADVISOR_ATTENUATION_SLACK) {
+      insights.push({
+        level: 'warning', title: 'Gravity flat below expected attenuation',
+        detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation — double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
+      });
+    } else if (!isFlat && completeStepDue && att < attenuationLow) {
+      insights.push({
+        level: 'info', title: 'Still fermenting past the usual check-in day',
+        detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far). Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
+      });
+    }
+  }
 
-  if (isFlat && att >= attenuationLow - ADVISOR_ATTENUATION_SLACK) {
-    return [{
-      level: 'good', title: 'Looks done fermenting',
-      detail: `Gravity hasn't moved in your last two readings (${prev.sg.toFixed(3)} → ${last.sg.toFixed(3)}), and attenuation is ${att.toFixed(0)}% — within this yeast's usual ${attenuationLow}-${attenuationHigh}% range.${completeStep ? ` Check the "${completeStep.title}" step below if you haven't.` : ''}`
-    }, ...(dueStep ? [dueStep] : [])];
+  // A stall warning is already urgent on its own — skip the routine due-step
+  // reminder in that case so it doesn't get lost underneath it.
+  if (!insights.some(i => i.level === 'warning')) {
+    const dueStep = getDueStepInsight(batch, recipe, stats, steps);
+    if (dueStep) insights.push(dueStep);
   }
-  if (isFlat && att < attenuationLow - ADVISOR_ATTENUATION_SLACK) {
-    return [{
-      level: 'warning', title: 'Gravity flat below expected attenuation',
-      detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation — double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
-    }];
+
+  // Recipe-authored yeast quirks (e.g. a blend whose apparent attenuation
+  // runs unusually high) — real, already-verified content, surfaced only
+  // while there's an active batch to apply it to rather than as a static doc.
+  if (recipe.yeast.notes) {
+    insights.push({ level: 'info', title: `About ${recipe.yeast.name.replace(/\s*\(.*\)$/, '')}`, detail: recipe.yeast.notes });
   }
-  if (!isFlat && completeStepDue && att < attenuationLow) {
-    return [{
-      level: 'info', title: 'Still fermenting past the usual check-in day',
-      detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far). Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
-    }];
-  }
-  return dueStep ? [dueStep] : [];
+
+  return insights;
 }
 
 if (typeof module !== 'undefined' && module.exports) {

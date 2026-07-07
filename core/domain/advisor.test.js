@@ -99,5 +99,29 @@ const dryHopRecipe = { ...recipe, dryHop: [{ name: 'Citra', weightG: 30 }] };
   check('dry hop suggested once confirm-complete is checked and day has arrived', insights.some(i => i.title === 'Dry Hop is due'), true);
 }
 
+// Upcoming tier: package step 2 days out (still within the window) after
+// confirm-complete is checked -> "coming up", not yet "due"
+{
+  const batch = { ...baseBatch, id: 'due4', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }, { date: '2026-06-11', sg: 1.0115 }] };
+  toggleTask(batch.id, 'confirm-complete', recipe);
+  const insights = getAdvisorInsights(batch, recipe, { daysSinceStart: 11, attenuationToDate: 77 }); // package day is 13
+  check('package 2 days out -> "coming up"', insights.some(i => i.title === 'Package coming up in 2 days'), true);
+}
+// Outside the upcoming window entirely -> no due/upcoming insight yet
+{
+  const batch = { ...baseBatch, id: 'due5', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-08', sg: 1.030 }, { date: '2026-06-09', sg: 1.025 }] };
+  toggleTask(batch.id, 'confirm-complete', recipe);
+  const insights = getAdvisorInsights(batch, recipe, { daysSinceStart: 9, attenuationToDate: 50 }); // package day 13, 4 days out
+  check('4 days out -> no due/upcoming insight yet', insights.some(i => i.title && i.title.startsWith('Package')), false);
+}
+
+// Recipe-authored yeast notes surface as their own insight while a batch is active
+{
+  const notedRecipe = { ...recipe, yeast: { ...recipe.yeast, name: 'Belgian Abbey (e.g. Wyeast 1214)', notes: 'Blended attenuation runs higher than the strain rating alone would suggest.' } };
+  const batch = { ...baseBatch, id: 'notes1', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-04', sg: 1.030 }, { date: '2026-06-05', sg: 1.025 }] };
+  const insights = getAdvisorInsights(batch, notedRecipe, { daysSinceStart: 5, attenuationToDate: 50 });
+  check('yeast note surfaced', insights.some(i => i.title === 'About Belgian Abbey' && i.detail === notedRecipe.yeast.notes), true);
+}
+
 console.log(`\n${failures === 0 ? 'ALL PASS' : failures + ' FAILURE(S)'}`);
 process.exit(failures === 0 ? 0 : 1);
