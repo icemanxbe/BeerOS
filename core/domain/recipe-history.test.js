@@ -10,7 +10,7 @@ global.taskId = state.taskId;
 global.toggleTask = state.toggleTask;
 global.APP = state.APP;
 global.apparentAttenuation = calculators.apparentAttenuation;
-const { computeRecipeHistory } = require('./recipe-history.js');
+const { computeRecipeHistory, mostRecentBatchOfRecipe } = require('./recipe-history.js');
 
 let failures = 0;
 function check(label, got, expected) {
@@ -65,6 +65,32 @@ const recipe = { yeast: { attenuationLow: 75, attenuationHigh: 82 } };
   const batches = [{ id: 'nodone', recipeId: 'my-recipe', startDate: '2026-01-01', gravityLogs: [] }];
   const result = computeRecipeHistory(batches, 'my-recipe');
   check('no checked complete step -> avgDaysToComplete null', result.avgDaysToComplete, null);
+}
+
+// mostRecentBatchOfRecipe: no other batch of this recipe -> null
+{
+  const batches = [{ id: 'current', recipeId: 'my-recipe', startDate: '2026-01-01', gravityLogs: [] }];
+  check('only the current batch -> null', mostRecentBatchOfRecipe(batches, 'my-recipe', 'current'), null);
+}
+
+// mostRecentBatchOfRecipe: picks the newest OTHER batch, excluding the current one
+{
+  const batches = [
+    { id: 'current', recipeId: 'my-recipe', startDate: '2026-03-01', gravityLogs: [], notes: '' },
+    { id: 'old', recipeId: 'my-recipe', startDate: '2026-01-01', name: 'Old Batch', gravityLogs: [{ date: '2026-01-01', sg: 1.050 }, { date: '2026-01-10', sg: 1.012 }], notes: 'underpitched' },
+    { id: 'newer', recipeId: 'my-recipe', startDate: '2026-02-01', name: 'Newer Batch', gravityLogs: [{ date: '2026-02-01', sg: 1.050 }, { date: '2026-02-11', sg: 1.010 }], notes: '' }
+  ];
+  const result = mostRecentBatchOfRecipe(batches, 'my-recipe', 'current');
+  check('picks the newer of the two other batches, not current', result.name, 'Newer Batch');
+  check('reports its real final SG', result.finalSG, 1.010);
+  check('reports its real attenuation', Math.round(result.attenuation), 80);
+}
+
+// mostRecentBatchOfRecipe: carries the batch's own notes through when present
+{
+  const batches = [{ id: 'old', recipeId: 'my-recipe', name: 'Old Batch', startDate: '2026-01-01', gravityLogs: [], notes: 'fermented a bit warm' }];
+  const result = mostRecentBatchOfRecipe(batches, 'my-recipe', 'current');
+  check('notes carried through', result.notes, 'fermented a bit warm');
 }
 
 console.log(`\n${failures === 0 ? 'ALL PASS' : failures + ' FAILURE(S)'}`);

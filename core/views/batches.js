@@ -227,6 +227,7 @@ function renderBatchDetail(id) {
   if (!b) return '<p>Batch not found.</p>';
   const recipe = BUILTIN_RECIPES().find(r => r.id === b.recipeId);
   const s = computeBatchStats(b, recipe);
+  const lastTime = recipe ? mostRecentBatchOfRecipe(APP.batches, b.recipeId, b.id) : null;
 
   const logRows = b.gravityLogs.map((g, i) =>
     `<tr><td>${g.date}</td><td>${g.sg.toFixed(3)}</td><td>${g.tempC !== undefined && g.tempC !== null ? g.tempC.toFixed(1) + '&deg;C' : ''}</td><td>${g.source ? `<span class="device-tag">${g.source}</span>` : ''}</td><td><button class="mini-btn" onclick="removeLog('${b.id}',${i})">&times;</button></td></tr>`
@@ -252,6 +253,7 @@ function renderBatchDetail(id) {
     </div>
 
     ${renderAdvisorInsights(b, recipe, s)}
+    ${renderLastTime(lastTime)}
 
     <div class="stat-row">
       <div class="stat"><span class="stat-val">${s.og ? s.og.toFixed(3) : '—'}</span><span class="stat-label">OG${s.og && !s.ogIsActual ? ' (est.)' : ''}</span></div>
@@ -274,6 +276,12 @@ function renderBatchDetail(id) {
       <p class="stat-hint">Set your iSpindel/GravityMon, or a Tilt/RAPT/Plaato bridge app, to use this exact name as its device name, and point it at this URL. New readings show up here next time you reload (or within a minute while this page stays open):</p>
       <div class="add-log-row"><code class="webhook-url">${webhookUrl}</code><button class="mini-btn" onclick="navigator.clipboard.writeText('${webhookUrl}')">Copy</button></div>
       <p class="stat-hint">Works with: iSpindel/GravityMon (native HTTP-post format), and anything that can target a "Brewfather Custom Stream"-compatible URL (Tilt via a bridge app, RAPT via a bridge/forwarder, Plaato via open-plaato-keg or similar) — this endpoint accepts both JSON shapes directly.</p>
+    </details>
+
+    <details class="sensor-device-card"${b.notes ? ' open' : ''}>
+      <summary>Notes</summary>
+      <textarea class="batch-notes-input" placeholder="e.g. slightly underpitched, fermented a bit warm..." onchange="setBatchNotes('${b.id}', this.value)">${b.notes || ''}</textarea>
+      <p class="stat-hint">Shows up as "Last time you brewed this" next time you start another batch from this recipe.</p>
     </details>
 
     <h2>Gravity Log</h2>
@@ -299,6 +307,21 @@ function renderAdvisorInsights(b, recipe, stats) {
     ${i.action ? `<div class="advisor-action"><strong>Suggested next step:</strong> ${i.action}</div>` : ''}
   </div>`).join('');
   return `<h2 class="advisor-heading">Advisor</h2><div class="advisor-card">${rows}</div>`;
+}
+
+// A point of comparison right when you're mid-brew, not just when browsing
+// the recipe library — see mostRecentBatchOfRecipe() in recipe-history.js.
+// Only ever your own real numbers; skips whatever this past batch doesn't
+// actually have data for instead of guessing.
+function renderLastTime(lastTime) {
+  if (!lastTime) return '';
+  const parts = [];
+  if (lastTime.finalSG !== null) parts.push(`finished at SG ${lastTime.finalSG.toFixed(3)}`);
+  if (lastTime.attenuation !== null) parts.push(`${lastTime.attenuation.toFixed(0)}% attenuation`);
+  if (lastTime.daysToComplete !== null) parts.push(`${lastTime.daysToComplete} day(s) to fermentation-complete`);
+  if (!parts.length && !lastTime.notes) return '';
+  const statsText = parts.length ? parts.join(' &middot; ') : 'no gravity readings logged';
+  return `<div class="bjcp-range-note">Last time you brewed this ("${lastTime.name}"): ${statsText}.${lastTime.notes ? ` You noted: &ldquo;${lastTime.notes}&rdquo;` : ''}</div>`;
 }
 
 function renderStepChecklist(b, recipe) {

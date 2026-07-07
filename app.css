@@ -181,6 +181,8 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .sensor-device-card summary{cursor:pointer;font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-spacing:1px;font-weight:500;padding:14px 0;list-style:revert}
 .sensor-device-card[open] summary{border-bottom:1px solid var(--border);margin-bottom:12px}
 .sensor-device-card .add-log-row:last-of-type{margin-bottom:16px}
+.batch-notes-input{width:100%;min-height:64px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);padding:8px 10px;font-family:var(--font-body);font-size:13.5px;outline:none;transition:border-color .2s;resize:vertical;margin-bottom:10px;box-sizing:border-box}
+.batch-notes-input:focus{border-color:var(--copper)}
 .data-table{width:100%;border-collapse:collapse;font-size:13px}
 .data-table th{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:400}
 .data-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text2)}

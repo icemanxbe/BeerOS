@@ -204,6 +204,13 @@ function setBatchDeviceName(batchId, deviceName) {
   scheduleSave();
 }
 
+function setBatchNotes(batchId, notes) {
+  const batch = APP.batches.find(b => b.id === batchId);
+  if (!batch) return;
+  batch.notes = notes;
+  scheduleSave();
+}
+
 // Computes live stats for a batch: OG is the first logged reading if one
 // exists, else the recipe's own computed target (a planning estimate).
 // FG/ABV/attenuation are computed to-date from the latest reading, so an
@@ -234,6 +241,6 @@ function computeBatchStats(batch, recipe) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, setBatchDeviceName, computeBatchStats,
-    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus, mergeTelemetry, APP
+    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus, mergeTelemetry, setBatchNotes, APP
   };
 }
