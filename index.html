@@ -54,6 +54,7 @@
 <script src="/core/data/yeasts.js"></script>
 <script src="/core/data/water-profiles.js"></script>
 <script src="/core/state/state.js"></script>
+<script src="/core/domain/advisor.js"></script>
 <script src="/core/views/vessel.js"></script>
 <script src="/core/views/recipes.js"></script>
 <script src="/core/views/malts.js"></script>
@@ -84,6 +85,11 @@ document.getElementById('topbar-date').textContent = new Date().toLocaleDateStri
   rerenderWaterPage();
   rerenderTools();
   renderSidebarBatches();
+
+  if (await mergeTelemetry()) { rerenderBatchesPage(); renderSidebarBatches(); }
+  setInterval(async () => {
+    if (await mergeTelemetry()) { rerenderBatchesPage(); renderSidebarBatches(); }
+  }, 60000);
 })();
 </script>
 </body>

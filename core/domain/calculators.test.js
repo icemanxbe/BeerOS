@@ -20,6 +20,10 @@ check('apparentAttenuation', c.apparentAttenuation(1.052, 1.013), 75, 0.1);
 
 // SG-to-Plato — KB §11.2: 1.050 -> 12.39 (corrected)
 check('sgToPlato', c.sgToPlato(1.050), 12.39, 0.01);
+// platoToSG — round-trip against the same verified cubic, both directions
+check('platoToSG round-trip (1.050)', c.platoToSG(c.sgToPlato(1.050)), 1.050, 0.0001);
+check('platoToSG round-trip (1.012)', c.platoToSG(c.sgToPlato(1.012)), 1.012, 0.0001);
+check('platoToSG matches known point (12.39P -> ~1.050)', c.platoToSG(12.39), 1.050, 0.001);
 
 // Real extract/attenuation — KB §2.2: OE 12.9°P, AE 3.3°P -> RE 5.04, real att 60.9%
 check('realExtract', c.realExtract(12.9, 3.3), 5.04, 0.01);

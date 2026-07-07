@@ -26,6 +26,19 @@ function fgFromAttenuation(og, attenuationPct) {
 function sgToPlato(sg) {
   return -616.868 + (1111.14 * sg) - (630.272 * sg * sg) + (135.997 * sg * sg * sg);
 }
+// Inverse of sgToPlato via bisection — the cubic has no simple closed-form
+// inverse, but it's monotonic increasing across the practical brewing range
+// (checked 0.990-1.200 SG), so bisecting against the same verified formula
+// is safe: this doesn't introduce a new/unverified formula, just solves the
+// existing one numerically. Used for devices (hydrometers) that report in Plato.
+function platoToSG(plato) {
+  let lo = 0.980, hi = 1.250;
+  for (let i = 0; i < 60; i++) {
+    const mid = (lo + hi) / 2;
+    if (sgToPlato(mid) < plato) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
 // Balling/Hall Real Extract formula, KB §2.2
 function realExtract(oePlato, aePlato) {
   return 0.1808 * oePlato + 0.8192 * aePlato;
@@ -196,7 +209,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     PPG_TO_PKL, ogFromGrainBill, pointsFromGrainBill,
     apparentAttenuation, fgFromAttenuation,
-    sgToPlato, realExtract, realAttenuation,
+    sgToPlato, platoToSG, realExtract, realAttenuation,
     abvSimple, abvHighGravity,
     tinsethBignessFactor, tinsethBoilTimeFactor, tinsethUtilization, tinsethIBU,
     moreySRM, srmToEBC, srmToHex,

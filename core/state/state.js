@@ -3,7 +3,7 @@
 // delta saves/sync protocol yet — add that complexity if/when a second
 // device or user actually needs it.
 
-const APP = { batches: [], tasksDone: {} };
+const APP = { batches: [], tasksDone: {}, telemetryToken: null, lastTelemetryId: 0 };
 let saveTimer = null;
 
 async function loadState() {
@@ -11,6 +11,8 @@ async function loadState() {
   const data = await res.json();
   APP.batches = data.batches || [];
   APP.tasksDone = data.tasksDone || {};
+  APP.telemetryToken = data.telemetryToken || null;
+  APP.lastTelemetryId = data.lastTelemetryId || 0;
 }
 
 function scheduleSave() {
@@ -21,8 +23,32 @@ async function saveState() {
   await fetch('/api/state', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ batches: APP.batches, tasksDone: APP.tasksDone })
+    body: JSON.stringify({ batches: APP.batches, tasksDone: APP.tasksDone, lastTelemetryId: APP.lastTelemetryId })
   });
+}
+
+// Pulls new hydrometer/sensor readings (see server.py's /api/telemetry — an
+// append-only table, deliberately NOT merged into the state blob server-side,
+// so a stale browser tab's next full-blob save can never clobber a reading
+// that arrived while it was open) and folds them into the matching batch's
+// gravityLogs by device name. Called on load and on a light poll interval —
+// readings appear next time this runs, not the instant they're posted.
+async function mergeTelemetry() {
+  const res = await fetch(`/api/telemetry?after=${APP.lastTelemetryId || 0}`);
+  const readings = await res.json();
+  if (!readings.length) return false;
+
+  let changed = false;
+  for (const r of readings) {
+    APP.lastTelemetryId = Math.max(APP.lastTelemetryId, r.id);
+    const batch = APP.batches.find(b => b.deviceName && b.deviceName.trim().toLowerCase() === r.deviceName.trim().toLowerCase());
+    if (!batch) continue;
+    batch.gravityLogs.push({ date: r.date, sg: r.sg, tempC: r.tempC, source: r.source });
+    batch.gravityLogs.sort((a, b) => a.date.localeCompare(b.date));
+    changed = true;
+  }
+  if (changed) scheduleSave();
+  return changed;
 }
 
 // Recipe steps as day-offsets from the batch's start date (day 0 = brew day),
@@ -171,6 +197,13 @@ function deleteBatch(batchId) {
   scheduleSave();
 }
 
+function setBatchDeviceName(batchId, deviceName) {
+  const batch = APP.batches.find(b => b.id === batchId);
+  if (!batch) return;
+  batch.deviceName = deviceName.trim() || null;
+  scheduleSave();
+}
+
 // Computes live stats for a batch: OG is the first logged reading if one
 // exists, else the recipe's own computed target (a planning estimate).
 // FG/ABV/attenuation are computed to-date from the latest reading, so an
@@ -200,7 +233,7 @@ function computeBatchStats(batch, recipe) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, computeBatchStats,
-    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus
+    createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, setBatchDeviceName, computeBatchStats,
+    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus, mergeTelemetry
   };
 }

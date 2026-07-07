@@ -128,6 +128,16 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .status-pill.status-fermenting{background:#12281a;color:var(--green2);border-color:var(--green)}
 .status-pill.status-conditioning{background:#0f1a2a;color:var(--blue2);border-color:var(--blue)}
 .status-pill.status-done{background:#241a0c;color:var(--copper2);border-color:var(--copper)}
+.advisor-card{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.advisor-item{background:linear-gradient(180deg,#131317,#101013);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:var(--radius2);padding:12px 16px}
+.advisor-item.level-good{border-left-color:var(--green)}
+.advisor-item.level-warning{border-left-color:var(--red)}
+.advisor-item.level-info{border-left-color:var(--blue)}
+.advisor-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.advisor-item.level-good .advisor-title{color:var(--green2)}
+.advisor-item.level-warning .advisor-title{color:var(--red2)}
+.advisor-item.level-info .advisor-title{color:var(--blue2)}
+.advisor-detail{font-size:13px;color:var(--text2);line-height:1.55}
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--text3)}
 .pager button{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:5px 12px;cursor:pointer;font-family:var(--font-mono);transition:all .15s}
 .pager button:hover:not(:disabled){border-color:var(--copper);color:var(--copper2)}
@@ -156,6 +166,12 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .add-log-row button{background:linear-gradient(135deg,#2a1c0c,#3d2a10);border:1px solid var(--copper);color:var(--copper2);border-radius:var(--radius);padding:8px 16px;font-family:var(--font-display);font-size:12.5px;letter-spacing:.5px;cursor:pointer}
 .mini-btn{background:var(--bg4);border:1px solid var(--border);color:var(--text3);border-radius:5px;padding:2px 8px;cursor:pointer;font-size:12px;transition:all .15s}
 .mini-btn:hover{color:var(--red2);border-color:var(--red)}
+.webhook-url{flex:1 1 260px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;font-family:var(--font-mono);font-size:12.5px;color:var(--copper2);overflow-x:auto;white-space:nowrap}
+.device-tag{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);background:var(--bg4);border:1px solid var(--border);border-radius:8px;padding:2px 7px}
+.sensor-device-card{border:1px solid var(--border);border-radius:var(--radius2);padding:2px 16px;margin:18px 0}
+.sensor-device-card summary{cursor:pointer;font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-spacing:1px;font-weight:500;padding:14px 0;list-style:revert}
+.sensor-device-card[open] summary{border-bottom:1px solid var(--border);margin-bottom:12px}
+.sensor-device-card .add-log-row:last-of-type{margin-bottom:16px}
 .data-table{width:100%;border-collapse:collapse;font-size:13px}
 .data-table th{font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;font-weight:400}
 .data-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text2)}

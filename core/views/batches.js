@@ -189,8 +189,9 @@ function renderBatchDetail(id) {
   const s = computeBatchStats(b, recipe);
 
   const logRows = b.gravityLogs.map((g, i) =>
-    `<tr><td>${g.date}</td><td>${g.sg.toFixed(3)}</td><td><button class="mini-btn" onclick="removeLog('${b.id}',${i})">&times;</button></td></tr>`
+    `<tr><td>${g.date}</td><td>${g.sg.toFixed(3)}</td><td>${g.tempC !== undefined && g.tempC !== null ? g.tempC.toFixed(1) + '&deg;C' : ''}</td><td>${g.source ? `<span class="device-tag">${g.source}</span>` : ''}</td><td><button class="mini-btn" onclick="removeLog('${b.id}',${i})">&times;</button></td></tr>`
   ).join('');
+  const webhookUrl = APP.telemetryToken ? `${location.origin}/api/telemetry?token=${APP.telemetryToken}` : '';
 
   return `<div class="batch-detail">
     <button class="back-btn" onclick="closeBatch()">&larr; Back to My Batches</button>
@@ -221,7 +222,19 @@ function renderBatchDetail(id) {
     ${!s.ogIsActual && s.og ? '<p class="stat-hint">OG shown is the recipe\'s computed target — log your first real gravity reading to replace it with the actual number for this batch.</p>' : ''}
     ${recipe ? `<div class="bjcp-range-note">Recipe target: OG ${s.recipeStats.og.toFixed(3)} &middot; ABV ${s.recipeStats.abv.toFixed(1)}% &middot; IBU ${s.recipeStats.ibu.toFixed(0)} &middot; SRM ${s.recipeStats.srm.toFixed(1)}</div>` : ''}
 
+    ${renderAdvisorInsights(b, recipe, s)}
+
     ${recipe ? renderStepChecklist(b, recipe) : ''}
+
+    <details class="sensor-device-card"${b.deviceName ? ' open' : ''}>
+      <summary>Sensor Device${b.deviceName ? ` <span class="device-tag">${b.deviceName}</span>` : ''}</summary>
+      <div class="add-log-row">
+        <input type="text" value="${b.deviceName || ''}" placeholder="e.g. Fermenter1" onchange="setBatchDeviceName('${b.id}', this.value); rerenderBatchesPage()">
+      </div>
+      <p class="stat-hint">Set your iSpindel/GravityMon, or a Tilt/RAPT/Plaato bridge app, to use this exact name as its device name, and point it at this URL. New readings show up here next time you reload (or within a minute while this page stays open):</p>
+      <div class="add-log-row"><code class="webhook-url">${webhookUrl}</code><button class="mini-btn" onclick="navigator.clipboard.writeText('${webhookUrl}')">Copy</button></div>
+      <p class="stat-hint">Works with: iSpindel/GravityMon (native HTTP-post format), and anything that can target a "Brewfather Custom Stream"-compatible URL (Tilt via a bridge app, RAPT via a bridge/forwarder, Plaato via open-plaato-keg or similar) — this endpoint accepts both JSON shapes directly.</p>
+    </details>
 
     <h2>Gravity Log</h2>
     <div class="add-log-row">
@@ -229,12 +242,22 @@ function renderBatchDetail(id) {
       <input type="number" id="log-sg" step="0.001" placeholder="1.050">
       <button onclick="submitLog('${b.id}')">Add Reading</button>
     </div>
-    ${b.gravityLogs.length ? `<div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Date</th><th>SG</th><th></th></tr></thead><tbody>${logRows}</tbody></table></div>` : '<p class="empty-note">No readings yet. The first reading you log becomes this batch\'s OG.</p>'}
+    ${b.gravityLogs.length ? `<div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Date</th><th>SG</th><th>Temp</th><th>Source</th><th></th></tr></thead><tbody>${logRows}</tbody></table></div>` : '<p class="empty-note">No readings yet. The first reading you log becomes this batch\'s OG.</p>'}
 
     <div class="danger-zone">
       <button class="btn-danger" onclick="confirmDeleteBatch('${b.id}')">Delete Batch</button>
     </div>
   </div>`;
+}
+
+function renderAdvisorInsights(b, recipe, stats) {
+  const insights = getAdvisorInsights(b, recipe, stats);
+  if (!insights.length) return '';
+  const rows = insights.map(i => `<div class="advisor-item level-${i.level}">
+    <div class="advisor-title">${i.title}</div>
+    <div class="advisor-detail">${i.detail}</div>
+  </div>`).join('');
+  return `<div class="advisor-card">${rows}</div>`;
 }
 
 function renderStepChecklist(b, recipe) {
