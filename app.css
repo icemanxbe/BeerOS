@@ -128,22 +128,25 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .status-pill.status-fermenting{background:#12281a;color:var(--green2);border-color:var(--green)}
 .status-pill.status-conditioning{background:#0f1a2a;color:var(--blue2);border-color:var(--blue)}
 .status-pill.status-done{background:#241a0c;color:var(--copper2);border-color:var(--copper)}
-.advisor-card{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
-.advisor-item{background:linear-gradient(180deg,#131317,#101013);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:var(--radius2);padding:12px 16px}
+.advisor-card{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.advisor-item{background:linear-gradient(180deg,#131317,#101013);border:1px solid var(--border);border-left:4px solid var(--border2);border-radius:var(--radius2);padding:18px 20px;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .advisor-item.level-good{border-left-color:var(--green)}
 .advisor-item.level-warning{border-left-color:var(--red)}
 .advisor-item.level-info{border-left-color:var(--blue)}
-.advisor-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.advisor-title{font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:.3px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.advisor-icon{font-size:15px;line-height:1}
 .advisor-item.level-good .advisor-title{color:var(--green2)}
 .advisor-item.level-warning .advisor-title{color:var(--red2)}
 .advisor-item.level-info .advisor-title{color:var(--blue2)}
-.advisor-detail{font-size:13px;color:var(--text2);line-height:1.55}
-.advisor-action{font-size:13px;color:var(--copper2);line-height:1.55;margin-top:6px}
+.advisor-batch-ref{font-family:var(--font-mono);font-size:11.5px;color:var(--text3);letter-spacing:.3px;margin-bottom:10px}
+.advisor-detail{font-size:13.5px;color:var(--text2);line-height:1.6}
+.advisor-action{font-size:13.5px;color:var(--copper2);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
 .advisor-heading{margin-top:12px}
-.today-panel{margin-bottom:8px}
-.today-item{cursor:pointer;transition:border-color .15s}
-.today-item:hover{border-color:var(--copper)}
-.today-continue{font-family:var(--font-mono);font-size:11px;color:var(--copper2);margin-top:6px;letter-spacing:.3px}
+.today-panel{margin-bottom:28px}
+.today-panel h2{margin-bottom:14px}
+.today-item{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.today-item:hover{border-color:var(--copper);box-shadow:0 4px 20px rgba(193,125,46,.12)}
+.today-continue-btn{margin-top:12px}
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--text3)}
 .pager button{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:5px 12px;cursor:pointer;font-family:var(--font-mono);transition:all .15s}
 .pager button:hover:not(:disabled){border-color:var(--copper);color:var(--copper2)}

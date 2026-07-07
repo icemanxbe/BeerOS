@@ -5,6 +5,7 @@
 
 const PAGE_SIZE = 20;
 const batchViewState = { search: '', statusFilter: 'all', sort: 'newest', page: 1, openBatchId: null };
+const ADVISOR_LEVEL_ICONS = { good: '&#10003;', warning: '&#9888;', info: '&#8505;' }; // checkmark / warning triangle / info — a second, non-color cue for the insight level
 
 function addDaysISO(dateStr, days) {
   const d = new Date(dateStr);
@@ -52,10 +53,11 @@ function renderTodaySummary() {
   }
   const rows = items.slice(0, 5).map(({ batch, insight }) => `
     <div class="advisor-item level-${insight.level} today-item" onclick="openBatch('${batch.id}')">
-      <div class="advisor-title">${batch.name} &middot; ${insight.title}</div>
+      <div class="advisor-title"><span class="advisor-icon">${ADVISOR_LEVEL_ICONS[insight.level] || ''}</span>${insight.title}</div>
+      <div class="advisor-batch-ref">${batch.name}${batch.recipeName ? ` &middot; ${batch.recipeName}` : ''}</div>
       <div class="advisor-detail">${insight.detail}</div>
       ${insight.action ? `<div class="advisor-action">${insight.action}</div>` : ''}
-      <div class="today-continue">Continue batch &rarr;</div>
+      <button class="brew-btn today-continue-btn">Continue Batch &rarr;</button>
     </div>`
   ).join('');
   return `<div class="today-panel"><h2>Continue Brewing</h2><div class="advisor-card">${rows}</div></div>`;
@@ -292,7 +294,7 @@ function renderAdvisorInsights(b, recipe, stats) {
   const insights = getAdvisorInsights(b, recipe, stats);
   if (!insights.length) return '';
   const rows = insights.map(i => `<div class="advisor-item level-${i.level}">
-    <div class="advisor-title">${i.title}</div>
+    <div class="advisor-title"><span class="advisor-icon">${ADVISOR_LEVEL_ICONS[i.level] || ''}</span>${i.title}</div>
     <div class="advisor-detail">${i.detail}</div>
     ${i.action ? `<div class="advisor-action"><strong>Suggested next step:</strong> ${i.action}</div>` : ''}
   </div>`).join('');
