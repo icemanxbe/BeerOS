@@ -12,6 +12,7 @@
 // and mostRecentBatchOfRecipe both need, kept in one place.
 function batchOutcome(b) {
   const first = b.gravityLogs[0], last = b.gravityLogs[b.gravityLogs.length - 1];
+  const og = first ? first.sg : null;
   const attenuation = (first && last && first !== last) ? apparentAttenuation(first.sg, last.sg) : null;
   const finalSG = last ? last.sg : null;
 
@@ -22,7 +23,7 @@ function batchOutcome(b) {
     const days = (new Date(completedDate) - new Date(b.startDate)) / 86400000;
     if (days > 0) daysToComplete = days;
   }
-  return { attenuation, finalSG, daysToComplete };
+  return { og, attenuation, finalSG, daysToComplete };
 }
 
 function computeRecipeHistory(batches, recipeId) {
@@ -49,6 +50,7 @@ function mostRecentBatchOfRecipe(batches, recipeId, excludeBatchId) {
   const outcome = batchOutcome(b);
   return {
     name: b.name,
+    og: outcome.og,
     finalSG: outcome.finalSG,
     attenuation: outcome.attenuation,
     daysToComplete: outcome.daysToComplete !== null ? Math.round(outcome.daysToComplete) : null,

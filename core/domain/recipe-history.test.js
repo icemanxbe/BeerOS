@@ -82,6 +82,7 @@ const recipe = { yeast: { attenuationLow: 75, attenuationHigh: 82 } };
   ];
   const result = mostRecentBatchOfRecipe(batches, 'my-recipe', 'current');
   check('picks the newer of the two other batches, not current', result.name, 'Newer Batch');
+  check('reports its real OG', result.og, 1.050);
   check('reports its real final SG', result.finalSG, 1.010);
   check('reports its real attenuation', Math.round(result.attenuation), 80);
 }

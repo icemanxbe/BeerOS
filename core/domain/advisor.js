@@ -28,7 +28,7 @@ function getPersonalPaceInsight(batch, recipe, stats) {
   return {
     level: 'info',
     title: 'Slower than your usual pace for this recipe',
-    detail: `You're on day ${stats.daysSinceStart} of fermentation; your past batches of this recipe averaged ${avgDays} day(s) to reach fermentation-complete.`,
+    detail: `Your past batches of this recipe typically reached fermentation-complete in about ${avgDays} day(s). This batch is currently on day ${stats.daysSinceStart}.`,
     action: `Not necessarily a problem — but worth a closer look if it keeps falling behind your own pattern.`
   };
 }

@@ -253,7 +253,7 @@ function renderBatchDetail(id) {
     </div>
 
     ${renderAdvisorInsights(b, recipe, s)}
-    ${renderLastTime(lastTime)}
+    ${renderLastTime(b, s, lastTime)}
 
     <div class="stat-row">
       <div class="stat"><span class="stat-val">${s.og ? s.og.toFixed(3) : '—'}</span><span class="stat-label">OG${s.og && !s.ogIsActual ? ' (est.)' : ''}</span></div>
@@ -309,19 +309,24 @@ function renderAdvisorInsights(b, recipe, stats) {
   return `<h2 class="advisor-heading">Advisor</h2><div class="advisor-card">${rows}</div>`;
 }
 
-// A point of comparison right when you're mid-brew, not just when browsing
-// the recipe library — see mostRecentBatchOfRecipe() in recipe-history.js.
-// Only ever your own real numbers; skips whatever this past batch doesn't
-// actually have data for instead of guessing.
-function renderLastTime(lastTime) {
+// Side-by-side comparison right when you're mid-brew, not just when
+// browsing the recipe library — see mostRecentBatchOfRecipe() in
+// recipe-history.js. Every cell is a real number or "—"; nothing here
+// is estimated or backfilled.
+function renderLastTime(b, s, lastTime) {
   if (!lastTime) return '';
-  const parts = [];
-  if (lastTime.finalSG !== null) parts.push(`finished at SG ${lastTime.finalSG.toFixed(3)}`);
-  if (lastTime.attenuation !== null) parts.push(`${lastTime.attenuation.toFixed(0)}% attenuation`);
-  if (lastTime.daysToComplete !== null) parts.push(`${lastTime.daysToComplete} day(s) to fermentation-complete`);
-  if (!parts.length && !lastTime.notes) return '';
-  const statsText = parts.length ? parts.join(' &middot; ') : 'no gravity readings logged';
-  return `<div class="bjcp-range-note">Last time you brewed this ("${lastTime.name}"): ${statsText}.${lastTime.notes ? ` You noted: &ldquo;${lastTime.notes}&rdquo;` : ''}</div>`;
+  const fmtSG = v => v === null ? '—' : v.toFixed(3);
+  const fmtPct = v => v === null ? '—' : `${v.toFixed(0)}%`;
+  const rows = [
+    ['OG', fmtSG(s.og), fmtSG(lastTime.og)],
+    ['Latest / Final SG', fmtSG(s.fg), fmtSG(lastTime.finalSG)],
+    ['Attenuation', fmtPct(s.attenuationToDate), fmtPct(lastTime.attenuation)],
+    ['Days', String(s.daysSinceStart), lastTime.daysToComplete !== null ? String(lastTime.daysToComplete) : '—'],
+    ['Notes', b.notes || '—', lastTime.notes || '—']
+  ];
+  const rowsHtml = rows.map(([label, cur, prev]) => `<tr><td>${label}</td><td>${cur}</td><td>${prev}</td></tr>`).join('');
+  return `<h2>Compared to Last Time</h2>
+    <div class="table-scroll"><table class="ingredient-table"><thead><tr><th></th><th>This Batch</th><th>${lastTime.name}</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
 }
 
 function renderStepChecklist(b, recipe) {
