@@ -20,9 +20,11 @@ const recipes = BUILTIN_RECIPES();
 const malts = loadFn('../data/malts.js', 'BUILTIN_MALTS')();
 const hops = loadFn('../data/hops.js', 'BUILTIN_HOPS')();
 const yeasts = loadFn('../data/yeasts.js', 'BUILTIN_YEASTS')();
+const waterProfiles = loadFn('../data/water-profiles.js', 'BUILTIN_WATER_PROFILES')();
 const {
   nameBasedMatch, yeastIdMatch, recipesUsingMalt, recipesUsingHop, recipesUsingYeast,
-  maltsMatchingName, hopsMatchingName, yeastsMatchingRecipeYeast
+  maltsMatchingName, hopsMatchingName, yeastsMatchingRecipeYeast,
+  waterProfilesMatchingRecipe, recipesMatchingWaterProfile
 } = require('./ingredient-links.js');
 
 let failures = 0;
@@ -72,6 +74,33 @@ check('yeast: unrelated id does not match', yeastIdMatch('American Ale (e.g. Fer
 // No false positives: an entirely fabricated ingredient name should match nothing
 check('nonsense malt name matches nothing', maltsMatchingName(malts, 'Completely Fictional Grain XYZ').length, 0);
 check('nonsense hop name matches nothing', hopsMatchingName(hops, 'Completely Fictional Hop XYZ').length, 0);
+
+// Water profile matching — keywords come from each profile's own cited
+// style text, so an IPA should match Burton and NOT Munich (Munich's
+// profile is cited only for Dunkel/Festbier, not IPAs).
+{
+  const ipa = recipes.find(r => r.style.toLowerCase().includes('ipa'));
+  const matches = waterProfilesMatchingRecipe(waterProfiles, ipa);
+  check('IPA matches Burton water profile', matches.some(p => p.id === 'burton'), true);
+  check('IPA does not match Munich water profile', matches.some(p => p.id === 'munich'), false);
+}
+{
+  const stout = recipes.find(r => r.style.toLowerCase().includes('stout'));
+  const matches = waterProfilesMatchingRecipe(waterProfiles, stout);
+  check('Stout matches Dublin water profile', matches.some(p => p.id === 'dublin'), true);
+}
+// Reverse direction
+{
+  const burton = waterProfiles.find(p => p.id === 'burton');
+  const matches = recipesMatchingWaterProfile(recipes, burton);
+  check('Burton profile matches at least one recipe', matches.length > 0, true);
+}
+// Munich is cited only for Dunkel/Festbier — neither exists in the current
+// recipe set, so 0 matches here is the honest, expected result, not a bug.
+{
+  const munich = waterProfiles.find(p => p.id === 'munich');
+  check('Munich profile matches nothing in the current recipe set (no Dunkel/Festbier recipe yet)', recipesMatchingWaterProfile(recipes, munich).length, 0);
+}
 
 console.log(`\n${failures === 0 ? 'ALL PASS' : failures + ' FAILURE(S)'}`);
 process.exit(failures === 0 ? 0 : 1);

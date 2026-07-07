@@ -57,10 +57,35 @@ function yeastsMatchingRecipeYeast(yeasts, recipeYeastName) {
   return yeasts.filter(y => yeastIdMatch(recipeYeastName, y.id));
 }
 
+// Water profiles: each BUILTIN_WATER_PROFILES() entry already carries a
+// `style` field naming the real styles it's historically associated with
+// (e.g. "Munich Dunkel, Festbier") — these keywords are pulled directly
+// from that cited text, not extended to adjacent styles the source didn't
+// name (e.g. Burton's profile is cited for pale ales/IPAs specifically, so
+// it won't match a Bitter even though both are English ales).
+const WATER_PROFILE_STYLE_KEYWORDS = {
+  burton: ['ipa', 'pale ale'],
+  pilsen: ['pils'],
+  dublin: ['stout'],
+  munich: ['dunkel', 'festbier']
+};
+function recipeStyleText(recipe) {
+  return `${recipe.name} ${recipe.style} ${recipe.styleCode || ''}`.toLowerCase();
+}
+function waterProfilesMatchingRecipe(profiles, recipe) {
+  const text = recipeStyleText(recipe);
+  return profiles.filter(p => (WATER_PROFILE_STYLE_KEYWORDS[p.id] || []).some(k => text.includes(k)));
+}
+function recipesMatchingWaterProfile(recipes, profile) {
+  const keywords = WATER_PROFILE_STYLE_KEYWORDS[profile.id] || [];
+  return recipes.filter(r => keywords.some(k => recipeStyleText(r).includes(k)));
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     nameBasedMatch, yeastIdMatch,
     recipesUsingMalt, recipesUsingHop, recipesUsingYeast,
-    maltsMatchingName, hopsMatchingName, yeastsMatchingRecipeYeast
+    maltsMatchingName, hopsMatchingName, yeastsMatchingRecipeYeast,
+    waterProfilesMatchingRecipe, recipesMatchingWaterProfile, WATER_PROFILE_STYLE_KEYWORDS
   };
 }

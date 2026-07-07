@@ -89,6 +89,10 @@ function renderRecipeDetail(id) {
   const dryHopRow = r.dryHop ? `<div class="dry-hop-note">Dry hop: ${r.dryHop.map(d => `${d.name} (${d.weightG}g)`).join(', ')}</div>` : '';
   const yeastMatch = yeastsMatchingRecipeYeast(yeastsLib, r.yeast.name)[0];
   const yeastNameHtml = linkTo('yeasts', 'openYeast', yeastMatch && yeastMatch.id, r.yeast.name);
+  const waterMatches = waterProfilesMatchingRecipe(BUILTIN_WATER_PROFILES(), r);
+  const waterProfileNote = waterMatches.length
+    ? `<div class="bjcp-range-note">Historically associated water profile: ${waterMatches.map(p => linkTo('water', 'openWaterProfile', p.id, p.name)).join(', ')} &mdash; see Water Chemistry for the full ion breakdown.</div>`
+    : '';
 
   return `<div class="recipe-detail">
     <button class="back-btn" onclick="closeRecipe()">&larr; Back to Recipe Library</button>
@@ -107,6 +111,7 @@ function renderRecipeDetail(id) {
     </div>
     <div class="bjcp-range-note">BJCP ${r.styleCode} target: OG ${r.bjcpRange.og[0]}-${r.bjcpRange.og[1]} &middot; FG ${r.bjcpRange.fg[0]}-${r.bjcpRange.fg[1]} &middot; ABV ${r.bjcpRange.abv[0]}-${r.bjcpRange.abv[1]}% &middot; IBU ${r.bjcpRange.ibu[0]}-${r.bjcpRange.ibu[1]} &middot; SRM ${r.bjcpRange.srm[0]}-${r.bjcpRange.srm[1]}</div>
     ${r.commercialInspiration ? `<div class="clone-disclaimer">This is a homebrew approximation inspired by ${r.name.replace(/-Inspired.*/, '')}'s real published ABV (${r.realAbv}%) and publicly known style/character — not the actual proprietary commercial recipe.</div>` : ''}
+    ${waterProfileNote}
 
     <h2>Grain Bill</h2>
     <div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Fermentable</th><th>Weight</th><th>Potential</th><th>Color</th></tr></thead><tbody>${grainRows}</tbody></table></div>

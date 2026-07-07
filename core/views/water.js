@@ -63,6 +63,7 @@ function renderWaterProfileDetail(id) {
       <div class="stat"><span class="stat-val">${p.hco3}</span><span class="stat-label">Bicarbonate</span></div>
     </div>
     <div class="bjcp-range-note">All values ppm. Historical figures vary by source/well — treat as directional character, not a precision target.</div>
+    ${renderUsedInRecipes(recipesMatchingWaterProfile(BUILTIN_RECIPES(), p))}
   </div>`;
 }
 
