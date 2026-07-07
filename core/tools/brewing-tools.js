@@ -20,6 +20,7 @@ function renderBrewingTools() {
     + renderSrmCard()
     + renderStrikeTempCard()
     + renderPrimingCard()
+    + renderForceCarbCard()
     + renderAlkalinityCard()
     + renderPitchRateCard()
     + renderRefractometerCard()
@@ -151,6 +152,24 @@ function renderPrimingCard() {
     + ['dextrose', 'sucrose', 'dme'].map(t => '<option value="' + t + '"' + (t === sugarType ? ' selected' : '') + '>' + t + '</option>').join('')
     + '</select></div>'
     + '<div class="calc-result">' + fmt(grams, 1) + ' g</div>'
+    + '</div>';
+}
+
+// ---- Force carbonation (kegging) ----
+function renderForceCarbCard() {
+  const g = id => { const el = document.getElementById && document.getElementById(id); return el ? parseFloat(el.value) : null; };
+  const temp = g('carb-temp') ?? 3;
+  const target = g('carb-target') ?? 2.5;
+  const elevation = g('carb-elevation') ?? 0;
+  const psi = forceCarbPressurePSI(temp, target, elevation);
+  const outOfRange = forceCarbInputOutOfRange(temp, target);
+  return '<div class="calc-card"><h2>Force Carbonation (Kegging)</h2>'
+    + '<div class="calc-row">Beer temp <input type="number" id="carb-temp" value="' + temp + '" step="0.5" oninput="rerenderTools()"> &deg;C</div>'
+    + '<div class="calc-row">Target CO&#8322; volumes <input type="number" id="carb-target" value="' + target + '" step="0.1" oninput="rerenderTools()"></div>'
+    + '<div class="calc-row">Elevation <input type="number" id="carb-elevation" value="' + elevation + '" step="50" oninput="rerenderTools()"> m</div>'
+    + '<div class="calc-result">' + fmt(psi, 1) + ' psi</div>'
+    + (outOfRange ? '<div class="calc-note">Outside the sourced reference table (34-42&deg;F / 2.1-2.9 vol) &mdash; clamped to the nearest edge, treat as a rough estimate only.</div>' : '')
+    + '<div class="calc-note">Chill to serving temp, apply this pressure, and let it sit ~1-2 days to equilibrate (faster if you rock/shake the keg). Higher-ABV or higher-gravity beers hold slightly less CO&#8322; than this table predicts. Alternative: prime the keg with sugar just like a bottle and let it condition sealed, or spund (cap the fermenter itself under pressure near the end of fermentation) to skip a separate carbonation step entirely.</div>'
     + '</div>';
 }
 

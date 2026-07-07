@@ -61,6 +61,20 @@ check('residualAlkalinity', c.residualAlkalinity(120, 80, 12), 95.4, 0.05);
 // Residual CO2 — KB §7.2: 68F (20C) -> 0.862 volumes
 check('residualCO2FromTempC', c.residualCO2FromTempC(20), 0.862, 0.005);
 
+// Force carbonation — KB §8.1 table, exact grid points (no interpolation needed)
+check('forceCarbPressurePSI (38F/2.5vol, exact grid point)', c.forceCarbPressurePSI(3.333, 2.5, 0), 11.3, 0.05);
+check('forceCarbPressurePSI (34F/2.1vol, table corner)', c.forceCarbPressurePSI(1.111, 2.1, 0), 5.2, 0.05);
+check('forceCarbPressurePSI (42F/2.9vol, table corner)', c.forceCarbPressurePSI(5.556, 2.9, 0), 17.8, 0.05);
+// KB §8.1 worked example: sea-level 11.3psi at 38F/2.5vol -> 13.3psi at 4000ft (1219.2m)
+check('forceCarbPressurePSI elevation adjustment (4000ft)', c.forceCarbPressurePSI(3.333, 2.5, 1219.2), 13.3, 0.05);
+// Interpolated midpoint (35F, halfway between 34F/36F rows) should land between their psi values
+{
+  const mid = c.forceCarbPressurePSI((34.5 - 32) * 5 / 9, 2.1, 0);
+  check('forceCarbPressurePSI interpolates between rows', mid > 5.2 && mid < 6.1 ? 1 : 0, 1, 0);
+}
+check('forceCarbInputOutOfRange flags below-range temp', c.forceCarbInputOutOfRange(-5, 2.5) ? 1 : 0, 1, 0);
+check('forceCarbInputOutOfRange false for in-range input', c.forceCarbInputOutOfRange(3.333, 2.5) ? 1 : 0, 0, 0);
+
 // Strike temp — KB §9.2 corrected worked example: target 66.67C, grain 20C, R=3.129 L/kg -> 72.89C (163.2F)
 check('strikeWaterTempC', c.strikeWaterTempC(66.67, 20, 3.129), 72.89, 0.02);
 

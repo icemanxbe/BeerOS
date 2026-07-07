@@ -3,13 +3,14 @@
 // delta saves/sync protocol yet — add that complexity if/when a second
 // device or user actually needs it.
 
-const APP = { batches: [] };
+const APP = { batches: [], tasksDone: {} };
 let saveTimer = null;
 
 async function loadState() {
   const res = await fetch('/api/state');
   const data = await res.json();
   APP.batches = data.batches || [];
+  APP.tasksDone = data.tasksDone || {};
 }
 
 function scheduleSave() {
@@ -20,8 +21,107 @@ async function saveState() {
   await fetch('/api/state', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ batches: APP.batches })
+    body: JSON.stringify({ batches: APP.batches, tasksDone: APP.tasksDone })
   });
+}
+
+// Recipe steps as day-offsets from the batch's start date (day 0 = brew day),
+// same trigger model MeadOS uses — a suggested check-in point, not a rigid
+// due date; the real signal is still the gravity readings. Derived from the
+// recipe's own already-verified fields (mash temp, hop schedule, yeast temp/
+// attenuation, dry hop) so it can't drift from the ingredient tables shown
+// alongside it. Day offsets themselves are standard homebrew-timeline
+// approximations (~2 weeks grain-to-bottle for an ale, ~5-6 weeks for a
+// lagered beer) — soft guidance, not a guarantee.
+function getRecipeSteps(r) {
+  const isLager = r.yeast.tempLowC <= 15;
+  const steps = [];
+
+  const boilMinutes = Math.max(...r.hopSchedule.map(h => h.minutes));
+  const sortedHops = r.hopSchedule.slice().sort((a, b) => b.minutes - a.minutes);
+  const hopLines = sortedHops.map(h => `With ${h.minutes} minute${h.minutes === 1 ? '' : 's'} left in a ${boilMinutes}-minute boil, add ${h.weightG}g ${h.name}${h.purpose ? ` (${h.purpose})` : ''}.`);
+  steps.push({
+    key: 'brew-day', day: 0, title: 'Brew Day',
+    desc: [
+      `Mill and mash all grains at ${r.mashTempC}°C for 60 minutes.`,
+      'Lauter/sparge to collect your full pre-boil volume, then bring the wort to a boil.',
+      ...hopLines,
+      `Chill the wort to fermentation temperature (${r.fermentTempC.low}-${r.fermentTempC.high}°C) and pitch ${r.yeast.name}.`
+    ].join(' ')
+  });
+
+  steps.push({
+    key: 'check-fermentation', day: 2, title: 'Check Fermentation',
+    desc: `Confirm active fermentation (krausen, airlock activity, or an early gravity drop) at ${r.fermentTempC.low}-${r.fermentTempC.high}°C.`
+  });
+
+  let lastDay = 2;
+  if (isLager) {
+    steps.push({ key: 'diacetyl-rest', day: 14, title: 'Diacetyl Rest',
+      desc: 'Once gravity is stable across multiple readings, raise the temperature to 18-20°C for 1-3 days before cold-crashing.' });
+    steps.push({ key: 'lager', day: 18, title: 'Cold-Crash & Lager',
+      desc: 'Cold-crash and lager near 0-4°C for at least 2-4 weeks before packaging.' });
+    lastDay = 18;
+  } else {
+    steps.push({ key: 'confirm-complete', day: 10, title: 'Confirm Fermentation Complete',
+      desc: `Gravity should be stable across multiple readings (expect roughly ${r.yeast.attenuationLow}-${r.yeast.attenuationHigh}% apparent attenuation from this yeast) before moving on.` });
+    lastDay = 10;
+  }
+
+  if (r.dryHop) {
+    const dh = r.dryHop.map(d => `${d.weightG}g ${d.name}`).join(', ');
+    const dryHopDay = lastDay + 1;
+    steps.push({ key: 'dry-hop', day: dryHopDay, title: 'Dry Hop',
+      desc: `Confirm fermentation is fully complete (stable gravity over several days) before dry hopping with ${dh} for 2-5 days — dry hopping too early risks hop creep restarting fermentation.` });
+    lastDay = dryHopDay + 4;
+  }
+
+  const packageDay = isLager ? lastDay + 21 : lastDay + 3;
+  steps.push({
+    key: 'package', day: packageDay, title: 'Package',
+    desc: 'Bottling: dose priming sugar (see the Priming Sugar calculator), cap, and condition 1-3+ weeks at room temperature for the yeast to naturally carbonate it. '
+      + 'Kegging: force-carbonate by chilling to serving temp and applying CO2 at the pressure this style needs (see the Force Carbonation calculator) for 1-2 days, or prime the keg with sugar exactly like a bottle and let it condition sealed. '
+      + 'Advanced: spund instead — cap the fermenter itself under pressure near the end of fermentation to carbonate without a separate packaging step.'
+  });
+  return steps;
+}
+
+function taskId(batchId, stepKey) { return `${batchId}-step-${stepKey}`; }
+function isTaskDone(id) { return !!APP.tasksDone[id]; }
+function toggleTask(batchId, stepKey, recipe) {
+  const id = taskId(batchId, stepKey);
+  if (APP.tasksDone[id]) delete APP.tasksDone[id];
+  else APP.tasksDone[id] = new Date().toISOString().slice(0, 10);
+  const batch = APP.batches.find(b => b.id === batchId);
+  if (batch && !batch.statusManual) refreshBatchStatus(batch, recipe);
+  scheduleSave();
+}
+
+// Status follows step completion by default (fluent — no separate manual
+// toggling needed once you're checking off real steps), with gravity-stall
+// detection as a secondary signal for when steps haven't been checked yet.
+// A batch flips to statusManual once the user picks a status directly, and
+// stays on whatever they picked until they check a later step forward.
+function deriveBatchStatus(batch, recipe) {
+  if (!recipe) return batch.status || 'fermenting';
+  const steps = getRecipeSteps(recipe);
+  const done = key => isTaskDone(taskId(batch.id, key));
+
+  const packageStep = steps.find(s => s.key === 'package');
+  if (packageStep && done('package')) return 'done';
+
+  const conditionKeys = ['confirm-complete', 'diacetyl-rest', 'lager', 'dry-hop'];
+  if (conditionKeys.some(done)) return 'conditioning';
+
+  const logs = batch.gravityLogs;
+  if (logs.length >= 2) {
+    const last = logs[logs.length - 1].sg, prev = logs[logs.length - 2].sg;
+    if (Math.abs(prev - last) <= 0.002) return 'conditioning'; // gravity flat = likely done fermenting
+  }
+  return 'fermenting';
+}
+function refreshBatchStatus(batch, recipe) {
+  batch.status = deriveBatchStatus(batch, recipe);
 }
 
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -62,6 +162,7 @@ function setBatchStatus(batchId, status) {
   const batch = APP.batches.find(b => b.id === batchId);
   if (!batch) return;
   batch.status = status;
+  batch.statusManual = true;
   scheduleSave();
 }
 
@@ -98,5 +199,8 @@ function computeBatchStats(batch, recipe) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, computeBatchStats };
+  module.exports = {
+    createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, computeBatchStats,
+    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus
+  };
 }

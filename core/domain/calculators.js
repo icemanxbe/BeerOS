@@ -102,6 +102,45 @@ function primingSugarGrams(targetVolumesCO2, batchVolumeL, tempC, sugarType) {
   return co2Grams / PRIMING_CO2_FRACTION[sugarType];
 }
 
+// Force carbonation pressure (kegging), KB §8.1. Two candidate closed-form
+// regressions were tried and both failed to reproduce this table (off by
+// ~14.7psi and ~1-2psi respectively) — rather than ship an unverified fit,
+// this interpolates directly over the Draught Beer Quality Manual's own
+// sourced grid (itself from ASBC "Methods of Analysis," 1949). Clamped to
+// the table's actual range (34-42°F, 2.1-2.9 vol) rather than extrapolated.
+const FORCE_CARB_TABLE_TEMPS_F = [34, 36, 38, 40, 42];
+const FORCE_CARB_TABLE_VOLS = [2.1, 2.3, 2.5, 2.7, 2.9];
+const FORCE_CARB_TABLE_PSI = [
+  [5.2, 7.2, 9.1, 11.1, 13.0],
+  [6.1, 8.2, 10.2, 12.3, 14.4],
+  [7.0, 9.2, 11.3, 13.5, 15.6],
+  [8.0, 10.2, 12.4, 14.6, 16.8],
+  [8.8, 11.0, 13.3, 15.6, 17.8]
+];
+function tableLerpIndex(xs, x) {
+  const clamped = Math.max(xs[0], Math.min(x, xs[xs.length - 1]));
+  let i = 0;
+  while (i < xs.length - 2 && clamped > xs[i + 1]) i++;
+  return { i, t: (clamped - xs[i]) / (xs[i + 1] - xs[i]) };
+}
+// elevationM: sea-level gauge pressure adjusted ~1psi/2000ft (KB §8.1), since
+// carbonation tracks absolute pressure and atmospheric pressure drops with elevation.
+function forceCarbPressurePSI(tempC, targetVolumesCO2, elevationM) {
+  const tempF = tempC * 9 / 5 + 32;
+  const t = tableLerpIndex(FORCE_CARB_TABLE_TEMPS_F, tempF);
+  const v = tableLerpIndex(FORCE_CARB_TABLE_VOLS, targetVolumesCO2);
+  const row0 = FORCE_CARB_TABLE_PSI[t.i][v.i] + (FORCE_CARB_TABLE_PSI[t.i][v.i + 1] - FORCE_CARB_TABLE_PSI[t.i][v.i]) * v.t;
+  const row1 = FORCE_CARB_TABLE_PSI[t.i + 1][v.i] + (FORCE_CARB_TABLE_PSI[t.i + 1][v.i + 1] - FORCE_CARB_TABLE_PSI[t.i + 1][v.i]) * v.t;
+  const seaLevelPsi = row0 + (row1 - row0) * t.t;
+  return seaLevelPsi + (elevationM || 0) / 609.6;
+}
+// true if the inputs fall outside the table's sourced range and had to be clamped.
+function forceCarbInputOutOfRange(tempC, targetVolumesCO2) {
+  const tempF = tempC * 9 / 5 + 32;
+  return tempF < FORCE_CARB_TABLE_TEMPS_F[0] || tempF > FORCE_CARB_TABLE_TEMPS_F[4]
+    || targetVolumesCO2 < FORCE_CARB_TABLE_VOLS[0] || targetVolumesCO2 > FORCE_CARB_TABLE_VOLS[4];
+}
+
 // Strike water temperature, KB §9. Implemented by converting to Palmer's own
 // verified imperial formula internally rather than trusting a re-derived
 // metric constant — see KB §9.2 for why the naive metric carry-over is wrong.
@@ -163,6 +202,7 @@ if (typeof module !== 'undefined' && module.exports) {
     moreySRM, srmToEBC, srmToHex,
     residualAlkalinity,
     residualCO2FromTempC, primingSugarGrams, PRIMING_CO2_FRACTION,
+    forceCarbPressurePSI, forceCarbInputOutOfRange, FORCE_CARB_TABLE_TEMPS_F, FORCE_CARB_TABLE_VOLS,
     strikeWaterTempC,
     targetPitchCellsBillions, PITCH_RATE,
     refractometerCorrectedFG,

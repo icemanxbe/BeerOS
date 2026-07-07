@@ -162,6 +162,25 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .data-table tr:nth-child(even) td{background:rgba(255,255,255,.015)}
 .data-table tr:hover td{background:var(--bg3);color:var(--text)}
 
+.status-auto-note{font-size:11.5px;color:var(--text3);margin-top:6px;font-style:italic}
+.status-auto-note a{color:var(--copper2);cursor:pointer}
+
+.task-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.task-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius2);cursor:pointer;transition:all .15s;background:var(--bg3)}
+.task-item:hover{border-color:var(--border2)}
+.task-item.done{opacity:.55}
+.task-item.done .task-title{text-decoration:line-through}
+.task-cb{flex-shrink:0;width:20px;height:20px;border:1px solid var(--border2);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#141210;margin-top:1px;transition:all .15s}
+.task-cb.checked{background:var(--copper);border-color:var(--copper);color:#141210;font-weight:700}
+.task-body{flex:1;min-width:0}
+.task-title{font-size:13.5px;color:var(--text);font-weight:500}
+.task-due{font-family:var(--font-mono);font-size:10.5px;color:var(--text3);font-weight:400}
+.task-desc{font-size:12.5px;color:var(--text2);line-height:1.55;margin-top:3px}
+
+.danger-zone{margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.btn-danger{background:var(--bg3);border:1px solid var(--red);color:var(--red2);border-radius:var(--radius);padding:7px 14px;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-danger:hover{background:#200e0e;color:#e06060}
+
 /* ---- Vessel (fermenter/keg) visualization ---- */
 .vessel-svg{display:block}
 .batch-row-vessel .vessel-svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
@@ -169,8 +188,28 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .vessel-particle{animation:vesselSettle 4s ease-in infinite}
 .vessel-particle.p2{animation-delay:1.3s;animation-duration:4.6s}
 .vessel-particle.p3{animation-delay:2.6s}
+.vessel-particle.p4{animation-delay:.6s;animation-duration:4.3s}
 @keyframes vesselSettle{0%{transform:translateY(-14px);opacity:0}20%{opacity:.6}100%{transform:translateY(14px);opacity:0}}
-@media(prefers-reduced-motion:reduce){.vessel-particle{animation:none;opacity:0}}
+/* Fermenting: a cluster of CO2 bubbles rising the full liquid height, staggered
+   so it reads as continuous churn rather than one blip, plus a bobbing krausen
+   and a livelier 2-bubble airlock. */
+@keyframes vesselBubbleRise{0%{transform:translateY(0);opacity:0}12%{opacity:.55}88%{opacity:.35}100%{transform:translateY(-78px);opacity:0}}
+.vessel-bubbles circle{opacity:0;animation:vesselBubbleRise 3s ease-in infinite}
+.vessel-bubbles circle:nth-child(1){animation-delay:0s}
+.vessel-bubbles circle:nth-child(2){animation-delay:.6s;animation-duration:2.6s}
+.vessel-bubbles circle:nth-child(3){animation-delay:1.3s}
+.vessel-bubbles circle:nth-child(4){animation-delay:.3s;animation-duration:3.4s}
+.vessel-bubbles circle:nth-child(5){animation-delay:1.9s;animation-duration:2.7s}
+.vessel-bubbles circle:nth-child(6){animation-delay:1s;animation-duration:3.2s}
+@keyframes vesselKrausenBob{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+.vessel-krausen{animation:vesselKrausenBob 2.2s ease-in-out infinite}
+@keyframes vesselAirlockBubble{0%{transform:translateY(0) scale(.6);opacity:0}25%{opacity:1}100%{transform:translateY(-9px) scale(1);opacity:0}}
+.al-bubble{opacity:0;animation:vesselAirlockBubble 1.7s ease-in infinite}
+.al-bubble.al2{animation-delay:.85s;animation-duration:1.5s}
+@media(prefers-reduced-motion:reduce){
+  .vessel-particle,.vessel-bubbles circle,.vessel-krausen,.al-bubble{animation:none;opacity:0}
+  .vessel-krausen{opacity:.65;transform:none}
+}
 
 /* ---- Modal ---- */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:flex-start;justify-content:center;z-index:100;padding:calc(4vh + env(safe-area-inset-top,0px)) 10px calc(4vh + env(safe-area-inset-bottom,0px));overflow-y:auto;animation:overlayIn .16s ease}

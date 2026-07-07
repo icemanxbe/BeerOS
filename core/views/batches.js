@@ -205,6 +205,8 @@ function renderBatchDetail(id) {
             `<button class="status-btn${b.status === st ? ' active' : ''}" onclick="setBatchStatus('${b.id}','${st}');rerenderBatchesPage();renderSidebarBatches()">${st}</button>`
           ).join('')}
         </div>
+        ${recipe && !b.statusManual ? '<p class="status-auto-note">Following your checked steps below &mdash; pick a status above any time to set it manually instead.</p>' : ''}
+        ${recipe && b.statusManual ? `<p class="status-auto-note">Set manually. <a href="#" onclick="resetBatchStatusToAuto('${b.id}');return false;">Follow checked steps instead</a>.</p>` : ''}
       </div>
     </div>
 
@@ -219,6 +221,8 @@ function renderBatchDetail(id) {
     ${!s.ogIsActual && s.og ? '<p class="stat-hint">OG shown is the recipe\'s computed target — log your first real gravity reading to replace it with the actual number for this batch.</p>' : ''}
     ${recipe ? `<div class="bjcp-range-note">Recipe target: OG ${s.recipeStats.og.toFixed(3)} &middot; ABV ${s.recipeStats.abv.toFixed(1)}% &middot; IBU ${s.recipeStats.ibu.toFixed(0)} &middot; SRM ${s.recipeStats.srm.toFixed(1)}</div>` : ''}
 
+    ${recipe ? renderStepChecklist(b, recipe) : ''}
+
     <h2>Gravity Log</h2>
     <div class="add-log-row">
       <input type="date" id="log-date" value="${new Date().toISOString().slice(0, 10)}">
@@ -226,7 +230,54 @@ function renderBatchDetail(id) {
       <button onclick="submitLog('${b.id}')">Add Reading</button>
     </div>
     ${b.gravityLogs.length ? `<div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Date</th><th>SG</th><th></th></tr></thead><tbody>${logRows}</tbody></table></div>` : '<p class="empty-note">No readings yet. The first reading you log becomes this batch\'s OG.</p>'}
+
+    <div class="danger-zone">
+      <button class="btn-danger" onclick="confirmDeleteBatch('${b.id}')">Delete Batch</button>
+    </div>
   </div>`;
+}
+
+function renderStepChecklist(b, recipe) {
+  const steps = getRecipeSteps(recipe);
+  const rows = steps.map(st => {
+    const id = taskId(b.id, st.key);
+    const done = isTaskDone(id);
+    const dueDate = addDaysISO(b.startDate, st.day);
+    return `<div class="task-item${done ? ' done' : ''}" onclick="onToggleTask('${b.id}','${st.key}')">
+      <span class="task-cb${done ? ' checked' : ''}">${done ? '&#10003;' : ''}</span>
+      <div class="task-body">
+        <div class="task-title">Day ${st.day} &middot; ${st.title} <span class="task-due">(around ${dueDate})</span></div>
+        <div class="task-desc">${st.desc}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<h2>Brewing Steps</h2><div class="task-list">${rows}</div>`;
+}
+function onToggleTask(batchId, stepKey) {
+  const batch = APP.batches.find(x => x.id === batchId);
+  const recipe = batch ? BUILTIN_RECIPES().find(r => r.id === batch.recipeId) : null;
+  toggleTask(batchId, stepKey, recipe);
+  rerenderBatchesPage();
+  renderSidebarBatches();
+}
+function resetBatchStatusToAuto(batchId) {
+  const batch = APP.batches.find(x => x.id === batchId);
+  if (!batch) return;
+  batch.statusManual = false;
+  const recipe = BUILTIN_RECIPES().find(r => r.id === batch.recipeId);
+  refreshBatchStatus(batch, recipe);
+  scheduleSave();
+  rerenderBatchesPage();
+  renderSidebarBatches();
+}
+function confirmDeleteBatch(batchId) {
+  const batch = APP.batches.find(x => x.id === batchId);
+  if (!batch) return;
+  if (!confirm(`Permanently delete "${batch.name}" and all its gravity readings?`)) return;
+  deleteBatch(batchId);
+  closeBatch();
+  rerenderBatchesPage();
+  renderSidebarBatches();
 }
 
 function submitLog(batchId) {

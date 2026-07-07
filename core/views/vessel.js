@@ -21,19 +21,30 @@ function renderVesselSVG(batch, recipe, size) {
   const done = status === 'done';
 
   // Conical fermenter: cylindrical body + tapered cone bottom + domed lid + airlock.
+  // Fermenting gets real visual energy: a cluster of CO2 bubbles rising through
+  // the full liquid column (staggered timing/duration, not a single blip) plus
+  // a bobbing krausen — same rising-bubble pattern MeadOS uses on its cellar
+  // shelf view, just scaled to this vessel's liquid height (~78px tall).
   const body = !done ? `
     <clipPath id="clip-${uid}"><path d="M14 18 h80 v58 l-40 46 l-40 -46 z"/></clipPath>
     <path d="M14 18 h80 v58 l-40 46 l-40 -46 z" fill="#2b2f36" stroke="#454b56" stroke-width="2"/>
     <g clip-path="url(#clip-${uid})">
       <rect x="10" y="46" width="88" height="90" fill="${liquid}" opacity="0.88"/>
-      ${fermenting ? `<path d="M14 46 q10 -5 20 0 t20 0 t20 0 t20 0 v6 h-80 z" fill="${liquid}" opacity="0.6"><animate attributeName="d" dur="2.4s" repeatCount="indefinite"
-        values="M14 46 q10 -5 20 0 t20 0 t20 0 t20 0 v6 h-80 z;
-                M14 47 q10 3 20 0 t20 0 t20 0 t20 0 v6 h-80 z;
-                M14 46 q10 -5 20 0 t20 0 t20 0 t20 0 v6 h-80 z"/></path>` : ''}
+      ${fermenting ? `
+      <g class="vessel-bubbles">
+        <circle cx="24" cy="128" r="2.2" fill="#fff"/>
+        <circle cx="36" cy="128" r="1.6" fill="#fff"/>
+        <circle cx="48" cy="128" r="2.4" fill="#fff"/>
+        <circle cx="60" cy="128" r="1.7" fill="#fff"/>
+        <circle cx="72" cy="128" r="2" fill="#fff"/>
+        <circle cx="84" cy="128" r="1.5" fill="#fff"/>
+      </g>
+      <path class="vessel-krausen" d="M14 46 q10 -6 20 0 t20 0 t20 0 t20 0 v8 h-80 z" fill="${liquid}" opacity="0.65"/>` : ''}
       ${conditioning ? `
         <circle class="vessel-particle" cx="30" cy="60" r="1.6" fill="#00000055"/>
         <circle class="vessel-particle p2" cx="55" cy="70" r="1.3" fill="#00000055"/>
         <circle class="vessel-particle p3" cx="72" cy="58" r="1.8" fill="#00000055"/>
+        <circle class="vessel-particle p4" cx="42" cy="90" r="1.4" fill="#00000055"/>
       ` : ''}
     </g>
     <path d="M14 18 h80 v58 l-40 46 l-40 -46 z" fill="none" stroke="#454b56" stroke-width="2"/>
@@ -41,7 +52,8 @@ function renderVesselSVG(batch, recipe, size) {
     <rect x="47" y="4" width="14" height="14" rx="3" fill="#3a3f48" stroke="#4d545f" stroke-width="2"/>
     ${fermenting ? `
       <g class="vessel-airlock">
-        <circle cx="54" cy="2" r="2" fill="var(--copper2)"><animate attributeName="cy" values="10;-2;10" dur="1.8s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/></circle>
+        <circle class="al-bubble" cx="51" cy="10" r="1.6" fill="var(--copper2)"/>
+        <circle class="al-bubble al2" cx="57" cy="10" r="1.3" fill="var(--copper2)"/>
       </g>` : ''}
   ` : `
     <rect x="24" y="16" width="60" height="112" rx="14" fill="#3a3f48" stroke="#4d545f" stroke-width="2"/>
