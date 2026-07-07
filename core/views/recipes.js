@@ -51,6 +51,15 @@ function setRecipeFilter(region) { recipeViewState.filterRegion = region; rerend
 function openRecipe(id) { recipeViewState.openRecipeId = id; rerenderRecipesPage(); }
 function closeRecipe() { recipeViewState.openRecipeId = null; rerenderRecipesPage(); }
 
+// Shared by the malt/hop/yeast library detail views (ingredient-links.js
+// does the matching; this just renders the result as clickable pills,
+// reusing the existing filter-button look rather than inventing a new one).
+function renderUsedInRecipes(recipeMatches) {
+  if (!recipeMatches.length) return '';
+  const links = recipeMatches.map(r => `<button class="region-btn" onclick="switchPage('recipes');openRecipe('${r.id}')">${r.name}</button>`).join('');
+  return `<h2>Used in These Recipes</h2><div class="region-filters">${links}</div>`;
+}
+
 // Read-only preview of the same day-by-day step schedule used once a batch
 // is actually started (see getRecipeSteps() in state.js) — one shared
 // source of truth so the Recipe Library preview can't drift from what the
@@ -64,9 +73,22 @@ function renderRecipeDetail(id) {
   if (!r) return '<p>Recipe not found.</p>';
   const s = computeRecipeStats(r);
 
-  const grainRows = r.grainBill.map(g => `<tr><td>${g.name}</td><td>${g.weightKg.toFixed(2)} kg</td><td>${g.ppg} PPG</td><td>${g.lovibond}&deg;L</td></tr>`).join('');
-  const hopRows = r.hopSchedule.map(h => `<tr><td>${h.name}</td><td>${h.weightG} g</td><td>${h.aaPct}%</td><td>${h.minutes} min</td><td>${h.purpose || ''}</td></tr>`).join('');
+  // Links out to the matching Malt/Hop/Yeast Library entry where one exists
+  // (heuristic name match, see ingredient-links.js) — a miss just falls back
+  // to plain text rather than a broken/wrong link.
+  const linkTo = (page, openFn, id, label) => id ? `<a href="#" onclick="switchPage('${page}');${openFn}('${id}');return false;">${label}</a>` : label;
+  const malts = BUILTIN_MALTS(), hopsLib = BUILTIN_HOPS(), yeastsLib = BUILTIN_YEASTS();
+  const grainRows = r.grainBill.map(g => {
+    const match = maltsMatchingName(malts, g.name)[0];
+    return `<tr><td>${linkTo('malts', 'openMalt', match && match.id, g.name)}</td><td>${g.weightKg.toFixed(2)} kg</td><td>${g.ppg} PPG</td><td>${g.lovibond}&deg;L</td></tr>`;
+  }).join('');
+  const hopRows = r.hopSchedule.map(h => {
+    const match = hopsMatchingName(hopsLib, h.name)[0];
+    return `<tr><td>${linkTo('hops', 'openHop', match && match.id, h.name)}</td><td>${h.weightG} g</td><td>${h.aaPct}%</td><td>${h.minutes} min</td><td>${h.purpose || ''}</td></tr>`;
+  }).join('');
   const dryHopRow = r.dryHop ? `<div class="dry-hop-note">Dry hop: ${r.dryHop.map(d => `${d.name} (${d.weightG}g)`).join(', ')}</div>` : '';
+  const yeastMatch = yeastsMatchingRecipeYeast(yeastsLib, r.yeast.name)[0];
+  const yeastNameHtml = linkTo('yeasts', 'openYeast', yeastMatch && yeastMatch.id, r.yeast.name);
 
   return `<div class="recipe-detail">
     <button class="back-btn" onclick="closeRecipe()">&larr; Back to Recipe Library</button>
@@ -94,7 +116,7 @@ function renderRecipeDetail(id) {
     ${dryHopRow}
 
     <h2>Yeast</h2>
-    <p>${r.yeast.name} &middot; ${r.yeast.attenuationLow}-${r.yeast.attenuationHigh}% attenuation &middot; ${r.yeast.tempLowC}-${r.yeast.tempHighC}&deg;C${r.yeast.notes ? `<br><em>${r.yeast.notes}</em>` : ''}</p>
+    <p>${yeastNameHtml} &middot; ${r.yeast.attenuationLow}-${r.yeast.attenuationHigh}% attenuation &middot; ${r.yeast.tempLowC}-${r.yeast.tempHighC}&deg;C${r.yeast.notes ? `<br><em>${r.yeast.notes}</em>` : ''}</p>
 
     <h2>Brewing Steps</h2>
     <ol class="step-list">${renderRecipeSteps(r).map(step => `<li>${step}</li>`).join('')}</ol>

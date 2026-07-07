@@ -51,6 +51,7 @@ function renderHopDetail(id) {
       <div class="stat"><span class="stat-val">${fmtRange(h.aaPct, '%')}</span><span class="stat-label">Alpha Acid</span></div>
     </div>
     <div class="bjcp-range-note">Role: ${h.role} &middot; AA% varies by crop year/region — always check the lot-specific % on your actual package before calculating IBUs.</div>
+    ${renderUsedInRecipes(recipesUsingHop(BUILTIN_RECIPES(), h))}
   </div>`;
 }
 

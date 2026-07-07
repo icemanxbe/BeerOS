@@ -53,6 +53,7 @@ function renderYeastDetail(id) {
       <div class="stat"><span class="stat-val" style="font-size:16px">${y.flocculation}</span><span class="stat-label">Flocculation</span></div>
     </div>
     <div class="bjcp-range-note">Pitch-rate style: ${y.pitchStyle}</div>
+    ${renderUsedInRecipes(recipesUsingYeast(BUILTIN_RECIPES(), y))}
   </div>`;
 }
 

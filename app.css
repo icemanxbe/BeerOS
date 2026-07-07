@@ -184,6 +184,8 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 
 .status-auto-note{font-size:11.5px;color:var(--text3);margin-top:6px;font-style:italic}
 .status-auto-note a{color:var(--copper2);cursor:pointer}
+.recipe-detail a{color:var(--copper2);text-decoration:none;border-bottom:1px dotted var(--copper)}
+.recipe-detail a:hover{color:var(--amber)}
 
 .task-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
 .task-item{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius2);cursor:pointer;transition:all .15s;background:var(--bg3)}

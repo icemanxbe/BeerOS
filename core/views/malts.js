@@ -71,6 +71,7 @@ function renderMaltDetail(id) {
     </div>
     <div class="bjcp-range-note">Self-converting alone: ${selfConvText}${usage ? ` &middot; Typical usage: ${usage} of the grain bill` : ''}</div>
     ${m.caution ? `<div class="clone-disclaimer">${m.caution}</div>` : ''}
+    ${renderUsedInRecipes(recipesUsingMalt(BUILTIN_RECIPES(), m))}
   </div>`;
 }
 
