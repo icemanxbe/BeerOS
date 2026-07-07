@@ -70,6 +70,17 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   check('still dropping, on track -> no insight', getAdvisorInsights(batch, recipe, stats).length, 0);
 }
 
+// Still dropping, on track, WITH a projection available -> forward-looking
+// info insight reusing the projection's own numbers (nothing new computed)
+{
+  const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-04', sg: 1.030 }, { date: '2026-06-05', sg: 1.025 }] };
+  const stats = { daysSinceStart: 5, attenuationToDate: 50, projection: { fgLow: 1.010, fgHigh: 1.012, daysToEarliest: 3.4, daysToLatest: 4.9 } };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('on track + projection -> title mentions days', firstTitle(insights), 'On track — projected done in about 3 days');
+  check('on track + projection -> level info', firstLevel(insights), 'info');
+  check('on track + projection -> detail cites the projected FG range', insights[0].detail.includes('1.010-1.012'), true);
+}
+
 // Custom batch (no recipe) -> no insight even with readings
 {
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }] };

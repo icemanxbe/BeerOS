@@ -87,6 +87,17 @@ function getAdvisorInsights(batch, recipe, stats) {
         detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far).`,
         action: `Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
       });
+    } else if (!isFlat && stats.projection) {
+      // Still dropping and nothing's wrong yet — reuses the same linear
+      // projection already shown in the stat-row hint, just voiced as
+      // forward-looking Advisor evidence instead of leaving this case silent.
+      const { fgLow, fgHigh, daysToEarliest } = stats.projection;
+      const days = Math.round(daysToEarliest);
+      insights.push({
+        level: 'info',
+        title: days <= 0 ? 'On track to finish any day now' : `On track — projected done in about ${days} day${days === 1 ? '' : 's'}`,
+        detail: `At the current rate, gravity should reach FG ${fgLow.toFixed(3)}-${fgHigh.toFixed(3)} in roughly ${days} more day(s) — the same straight-line estimate as the projection above.`
+      });
     }
   }
 
