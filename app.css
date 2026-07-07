@@ -138,6 +138,10 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .advisor-item.level-warning .advisor-title{color:var(--red2)}
 .advisor-item.level-info .advisor-title{color:var(--blue2)}
 .advisor-detail{font-size:13px;color:var(--text2);line-height:1.55}
+.today-panel{margin-bottom:8px}
+.today-item{cursor:pointer;transition:border-color .15s}
+.today-item:hover{border-color:var(--copper)}
+.today-continue{font-family:var(--font-mono);font-size:11px;color:var(--copper2);margin-top:6px;letter-spacing:.3px}
 .pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--text3)}
 .pager button{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:var(--radius);padding:5px 12px;cursor:pointer;font-family:var(--font-mono);transition:all .15s}
 .pager button:hover:not(:disabled){border-color:var(--copper);color:var(--copper2)}

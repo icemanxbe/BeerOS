@@ -24,6 +24,42 @@ function renderProjectionHint(projection, lastLogDate) {
   return `<p class="stat-hint">Projected finish: FG ${projection.fgLow.toFixed(3)}–${projection.fgHigh.toFixed(3)}, roughly ${dayText} more day(s) at the current rate (${dateText}). A straight-line estimate from your recent readings, not a fermentation curve model — expect it to move as more readings come in.</p>`;
 }
 
+// "What should I care about today" — the Advisor's top insight per active
+// batch, surfaced above the list instead of making you open each one to
+// find out. Reuses getAdvisorInsights as-is; doesn't invent a new signal.
+function getTodaySummary() {
+  const active = APP.batches.filter(b => b.status !== 'done');
+  const items = [];
+  active.forEach(b => {
+    const recipe = BUILTIN_RECIPES().find(r => r.id === b.recipeId);
+    const stats = computeBatchStats(b, recipe);
+    const insights = getAdvisorInsights(b, recipe, stats);
+    if (insights.length) items.push({ batch: b, insight: insights[0] });
+  });
+  const levelOrder = { warning: 0, info: 1, good: 2 };
+  items.sort((a, b) => levelOrder[a.insight.level] - levelOrder[b.insight.level]);
+  return { activeCount: active.length, items };
+}
+
+function renderTodaySummary() {
+  const { activeCount, items } = getTodaySummary();
+  if (activeCount === 0) return '';
+  if (!items.length) {
+    return `<div class="today-panel">
+      <h2>Today</h2>
+      <p class="stat-hint">Nothing needs your attention right now — ${activeCount} batch${activeCount === 1 ? '' : 'es'} fermenting normally.</p>
+    </div>`;
+  }
+  const rows = items.slice(0, 5).map(({ batch, insight }) => `
+    <div class="advisor-item level-${insight.level} today-item" onclick="openBatch('${batch.id}')">
+      <div class="advisor-title">${batch.name} &middot; ${insight.title}</div>
+      <div class="advisor-detail">${insight.detail}</div>
+      <div class="today-continue">Continue batch &rarr;</div>
+    </div>`
+  ).join('');
+  return `<div class="today-panel"><h2>Today</h2><div class="advisor-card">${rows}</div></div>`;
+}
+
 function renderBatchesPage() {
   if (batchViewState.openBatchId) return renderBatchDetail(batchViewState.openBatchId);
 
@@ -76,6 +112,7 @@ function renderBatchesPage() {
 
   return `<div class="batches-page">
     <h1>My Batches</h1>
+    ${renderTodaySummary()}
     <div class="batch-controls">
       <input type="text" placeholder="Search batches..." value="${batchViewState.search}" oninput="setBatchSearch(this.value)">
       <select onchange="setBatchSort(this.value)">
