@@ -124,6 +124,25 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   check('still dropping past due day, below range -> info', firstLevel(getAdvisorInsights(batch, recipe, stats)), 'info');
 }
 
+// Same "still dropping past due day" case, but with a sustained cold sensor
+// reading -> the cold-temp evidence applies here too, not just the flat-stall
+// warning, since a cold ferment can also explain why it's running slow
+// without having fully stopped yet
+{
+  const batch = {
+    ...baseBatch,
+    gravityLogs: [
+      { date: '2026-06-01', sg: 1.050 },
+      { date: '2026-06-10', sg: 1.031, tempC: 14.0 },
+      { date: '2026-06-11', sg: 1.030, tempC: 14.5 },
+      { date: '2026-06-12', sg: 1.025, tempC: 14.2 }
+    ]
+  };
+  const stats = { daysSinceStart: 11, attenuationToDate: 50 };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('still-dropping-past-due-day also cites sustained cold evidence', insights[0].detail.includes('recent temperature readings have been around'), true);
+}
+
 // Still dropping, on track -> no insight
 {
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-04', sg: 1.030 }, { date: '2026-06-05', sg: 1.025 }] };

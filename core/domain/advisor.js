@@ -34,11 +34,12 @@ function getPersonalPaceInsight(batch, recipe, stats) {
 }
 
 // Folds real temperature evidence (from a hooked-up sensor — see mergeTelemetry
-// in state.js) into the existing stall warning rather than a separate
-// temperature insight: a cold reading is one of the most common real
-// explanations for a stalled fermentation, so when the data is there, name
-// it as evidence instead of leaving the brewer to guess. Silent whenever no
-// device is reporting temperature, or the recent reading is in range.
+// in state.js) into the existing slow/stalled-fermentation insights rather
+// than a separate temperature insight: a cold reading is one of the most
+// common real explanations for slow-or-stopped fermentation, so when the
+// data is there, name it as evidence instead of leaving the brewer to
+// guess. Silent whenever no device is reporting temperature, or the recent
+// reading is in range.
 //
 // Uses the median of the last few readings rather than the single latest
 // one — a real sensor can log far more often than a hydrometer, and a
@@ -133,7 +134,7 @@ function getAdvisorInsights(batch, recipe, stats) {
     } else if (!isFlat && completeStepDue && att < attenuationLow) {
       insights.push({
         level: 'info', title: 'Still fermenting past the usual check-in day',
-        detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far).`,
+        detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far).${getColdTempNote(batch, recipe)}`,
         action: `Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
       });
     } else if (!isFlat && stats.projection) {
