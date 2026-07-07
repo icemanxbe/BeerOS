@@ -1,8 +1,12 @@
 // Verifies getAdvisorInsights against constructed batch/recipe/stats fixtures.
 // Run: node core/domain/advisor.test.js
-// Needs getRecipeSteps from state.js in global scope (advisor.js calls it as
-// a bare identifier, matching how it's loaded in the browser after state.js).
-global.getRecipeSteps = require('../state/state.js').getRecipeSteps;
+// Needs state.js's step/task functions in global scope (advisor.js calls them
+// as bare identifiers, matching how it's loaded in the browser after state.js).
+const state = require('../state/state.js');
+global.getRecipeSteps = state.getRecipeSteps;
+global.isTaskDone = state.isTaskDone;
+global.taskId = state.taskId;
+global.toggleTask = state.toggleTask;
 const { getAdvisorInsights } = require('./advisor.js');
 
 let failures = 0;
@@ -67,6 +71,32 @@ check('no readings, day 3 -> nudge', firstTitle(getAdvisorInsights({ ...baseBatc
 {
   const batch = { ...baseBatch, status: 'done', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.030 }] };
   check('done status -> no insight', getAdvisorInsights(batch, recipe, { daysSinceStart: 30, attenuationToDate: 40 }).length, 0);
+}
+
+// Due-step reminder: package due once confirm-complete is already checked,
+// surfaced ALONGSIDE the "looks done" insight (not instead of it)
+{
+  const batch = { ...baseBatch, id: 'due1', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }, { date: '2026-06-11', sg: 1.0115 }] };
+  toggleTask(batch.id, 'confirm-complete', recipe);
+  const insights = getAdvisorInsights(batch, recipe, { daysSinceStart: 13, attenuationToDate: 77 });
+  check('package due -> 2 insights (good + due)', insights.length, 2);
+  check('package due -> second is the due-step reminder', insights[1] && insights[1].title, 'Package is due');
+}
+
+// Due-step reminder never jumps ahead: with dry hop in the recipe, dry-hop
+// must not be suggested before confirm-complete is actually checked, even
+// once dry-hop's own day has passed (mirrors the step's own hop-creep warning)
+const dryHopRecipe = { ...recipe, dryHop: [{ name: 'Citra', weightG: 30 }] };
+{
+  const batch = { ...baseBatch, id: 'due2', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }, { date: '2026-06-11', sg: 1.0115 }] };
+  const insights = getAdvisorInsights(batch, dryHopRecipe, { daysSinceStart: 12, attenuationToDate: 77 });
+  check('dry hop not suggested before confirm-complete checked', (insights.find(i => i.title === 'Dry Hop is due')), undefined);
+}
+{
+  const batch = { ...baseBatch, id: 'due3', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }, { date: '2026-06-11', sg: 1.0115 }] };
+  toggleTask(batch.id, 'confirm-complete', dryHopRecipe);
+  const insights = getAdvisorInsights(batch, dryHopRecipe, { daysSinceStart: 12, attenuationToDate: 77 });
+  check('dry hop suggested once confirm-complete is checked and day has arrived', insights.some(i => i.title === 'Dry Hop is due'), true);
 }
 
 console.log(`\n${failures === 0 ? 'ALL PASS' : failures + ' FAILURE(S)'}`);
