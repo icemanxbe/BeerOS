@@ -11,7 +11,7 @@ A self-hosted batch tracker and reference library for home beer brewers. No buil
 - Log gravity manually, or point an iSpindel/GravityMon at BeerOS directly (native HTTP-post format) — or anything that can target a "Brewfather Custom Stream"-compatible URL (Tilt/RAPT/Plaato via their existing bridge apps) — and readings land in the log automatically.
 - A per-recipe step checklist (brew day → fermentation checks → dry hop / diacetyl rest / lagering → packaging) generated from the recipe's own grain bill, hop schedule, and yeast — not hand-authored, so it can't drift out of sync with the recipe.
 - Batch status (fermenting / conditioning / done) follows your checked steps and gravity trend automatically, with a one-click manual override when you want to set it yourself.
-- A rule-based **Advisor**: reads the gravity trend against the recipe's own yeast attenuation range to flag "looks done fermenting" or "possible stall," surfaces the linear fermentation projection as a forward-looking "on track, done in about N days" while nothing's wrong yet, and reminds you when dry hop/diacetyl rest/packaging is coming up or due — each insight cites the actual numbers it's reasoning from, nothing is asserted without evidence. A "Continue Brewing" panel surfaces the most urgent insight across all active batches right on the My Batches page.
+- A rule-based **Advisor**: reads the gravity trend against the recipe's own yeast attenuation range to flag "looks done fermenting" or "possible stall," surfaces the linear fermentation projection as a forward-looking "on track, done in about N days" while nothing's wrong yet, compares this batch's fermentation length against your own average for this exact recipe once you have it ("slower than your usual pace for this recipe" — takes priority over the generic checks above when it applies), and reminds you when dry hop/diacetyl rest/packaging is coming up or due — each insight cites the actual numbers it's reasoning from, nothing is asserted without evidence. A "Continue Brewing" panel surfaces the most urgent insight across all active batches right on the My Batches page.
 - Search, filter, sort, pagination, CSV export, and batch deletion.
 - An animated SVG fermenter/keg per batch — liquid tint from the recipe's real computed SRM, rising-bubble/krausen animation while fermenting, settling particles while conditioning, a kegged-and-capped icon when done.
 
@@ -27,7 +27,7 @@ A self-hosted batch tracker and reference library for home beer brewers. No buil
 
 ## What's not here yet
 
-- The Advisor reasons from the recipe's generic yeast spec, not your own brewing history yet — "Your Batches" on the recipe page is the first slice of personal history, but it isn't fed back into the Advisor's own rules yet (e.g. "your last four batches with this yeast averaged X%" instead of the strain's textbook range).
+- The Advisor has exactly one history-aware rule (fermentation pace vs. your own average for the exact recipe) by design — it's not yet comparing attenuation, temperature, or efficiency against your own history, only day count. Deliberately narrow rather than wiring history into every existing rule at once.
 - Ingredient cross-linking connects existing data (a recipe already references a malt/hop/yeast/water-profile by name); it doesn't yet synthesize new content like hop pairing or substitution suggestions.
 - Equipment/multi-vessel tracking (e.g. animating a transfer from fermenter to a bright tank).
 - PWA packaging (manifest/icons).

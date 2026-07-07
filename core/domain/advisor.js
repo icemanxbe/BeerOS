@@ -10,6 +10,28 @@ const ADVISOR_ATTENUATION_SLACK = 3; // percentage points below the yeast's low 
 const ADVISOR_TRIVIAL_STEP_KEYS = ['brew-day', 'check-fermentation']; // one-off "did this happen" boxes many brewers won't bother ticking — never gate a later reminder on them
 const ADVISOR_DUE_STEP_KEYS = ['dry-hop', 'diacetyl-rest', 'package']; // confirm-complete/lager are covered by the gravity-based rules below
 const ADVISOR_UPCOMING_WINDOW_DAYS = 2; // "coming up in N days" starts this far ahead of the step's own day
+const ADVISOR_PERSONAL_PACE_SLACK_DAYS = 2; // days over your own average before it's worth mentioning, not just normal variance
+
+// The one deliberately-chosen history-aware rule (see recipe-history.js):
+// compares THIS batch's day count against the brewer's own past average for
+// this exact recipe, not the yeast's generic textbook range. Only fires
+// while still actively fermenting and only once there's real personal data
+// (2+ prior completions) — a single comparison axis, not a running
+// commentary on every past batch.
+function getPersonalPaceInsight(batch, recipe, stats) {
+  if (isTaskDone(taskId(batch.id, 'confirm-complete')) || isTaskDone(taskId(batch.id, 'lager'))) return null;
+  const history = computeRecipeHistory(APP.batches, batch.recipeId);
+  if (history.avgDaysToComplete === null) return null;
+  const avgDays = Math.round(history.avgDaysToComplete);
+  const daysOver = stats.daysSinceStart - avgDays;
+  if (daysOver < ADVISOR_PERSONAL_PACE_SLACK_DAYS) return null;
+  return {
+    level: 'info',
+    title: 'Slower than your usual pace for this recipe',
+    detail: `You're on day ${stats.daysSinceStart} of fermentation; your past batches of this recipe averaged ${avgDays} day(s) to reach fermentation-complete.`,
+    action: `Not necessarily a problem — but worth a closer look if it keeps falling behind your own pattern.`
+  };
+}
 
 // The next unchecked NON-TRIVIAL step in the recipe's own chronological order
 // (getRecipeSteps already returns steps sorted by day), skipping brew-day/
@@ -67,6 +89,10 @@ function getAdvisorInsights(batch, recipe, stats) {
 
   const completeStep = steps.find(s => s.key === 'confirm-complete' || s.key === 'lager');
   const completeStepDue = !!completeStep && daysSinceStart >= completeStep.day;
+  // Personal history is more specific than the recipe's own generic schedule
+  // or a fresh-batch projection, so it takes priority over both when it has
+  // something to say (computed once up front, checked below).
+  const personalPace = !isFlat ? getPersonalPaceInsight(batch, recipe, stats) : null;
 
   if (att !== null) {
     if (isFlat && att >= attenuationLow - ADVISOR_ATTENUATION_SLACK) {
@@ -81,6 +107,8 @@ function getAdvisorInsights(batch, recipe, stats) {
         detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation.`,
         action: `Double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
       });
+    } else if (personalPace) {
+      insights.push(personalPace);
     } else if (!isFlat && completeStepDue && att < attenuationLow) {
       insights.push({
         level: 'info', title: 'Still fermenting past the usual check-in day',

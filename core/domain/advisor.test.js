@@ -7,7 +7,11 @@ global.getRecipeSteps = state.getRecipeSteps;
 global.isTaskDone = state.isTaskDone;
 global.taskId = state.taskId;
 global.toggleTask = state.toggleTask;
+global.APP = state.APP;
+global.apparentAttenuation = require('./calculators.js').apparentAttenuation;
+global.computeRecipeHistory = require('./recipe-history.js').computeRecipeHistory;
 const { getAdvisorInsights } = require('./advisor.js');
+const daysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
 
 let failures = 0;
 function check(label, got, expected) {
@@ -79,6 +83,33 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   check('on track + projection -> title mentions days', firstTitle(insights), 'On track — projected done in about 3 days');
   check('on track + projection -> level info', firstLevel(insights), 'info');
   check('on track + projection -> detail cites the projected FG range', insights[0].detail.includes('1.010-1.012'), true);
+}
+
+// Personal pace: compares THIS batch's day count against the brewer's own
+// average for this exact recipe (see recipe-history.js), not the yeast's
+// generic textbook range or the recipe's own day-based schedule. Takes
+// priority over both of those generic rules when it has something to say.
+{
+  const paceRecipe = { ...recipe, id: 'pace-recipe' };
+  APP.batches = [
+    { id: 'prior1', recipeId: 'pace-recipe', startDate: daysAgo(10), gravityLogs: [] },
+    { id: 'prior2', recipeId: 'pace-recipe', startDate: daysAgo(12), gravityLogs: [] }
+  ];
+  toggleTask('prior1', 'confirm-complete', paceRecipe); // completes "today" -> ~10 days
+  toggleTask('prior2', 'confirm-complete', paceRecipe); // completes "today" -> ~12 days
+  // avg ~11 days
+
+  const slowBatch = { ...baseBatch, id: 'pace-slow', recipeId: 'pace-recipe', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-04', sg: 1.030 }, { date: '2026-06-05', sg: 1.025 }] };
+  const slowInsights = getAdvisorInsights(slowBatch, paceRecipe, { daysSinceStart: 14, attenuationToDate: 50 }); // 3+ days over the ~11 day average, and past paceRecipe's own day-10 check-in
+  check('slower than personal pace -> flagged first', firstTitle(slowInsights), 'Slower than your usual pace for this recipe');
+  check('slower than personal pace -> level info', firstLevel(slowInsights), 'info');
+  check('personal pace takes priority over the generic check-in-day rule', slowInsights.some(i => i.title === 'Still fermenting past the usual check-in day'), false);
+
+  const onPaceBatch = { ...baseBatch, id: 'pace-ontrack', recipeId: 'pace-recipe', gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-04', sg: 1.030 }, { date: '2026-06-05', sg: 1.025 }] };
+  const onPaceInsights = getAdvisorInsights(onPaceBatch, paceRecipe, { daysSinceStart: 12, attenuationToDate: 50 }); // only ~1 day over average, within the slack
+  check('within personal-pace slack -> not flagged as slow', onPaceInsights.some(i => i.title === 'Slower than your usual pace for this recipe'), false);
+
+  APP.batches = []; // reset so later tests see no personal history
 }
 
 // Custom batch (no recipe) -> no insight even with readings
