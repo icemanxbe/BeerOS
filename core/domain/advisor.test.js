@@ -30,21 +30,30 @@ const baseStats = { daysSinceStart: 0, attenuationToDate: null };
 // No readings, too early
 check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, recipe, { ...baseStats, daysSinceStart: 1 }).length, 0);
 
-// No readings, day 3 -> nudge
-check('no readings, day 3 -> nudge', firstTitle(getAdvisorInsights({ ...baseBatch }, recipe, { ...baseStats, daysSinceStart: 3 })), 'No gravity readings yet');
+// No readings, day 3 -> nudge, with evidence/action split
+{
+  const insights = getAdvisorInsights({ ...baseBatch }, recipe, { ...baseStats, daysSinceStart: 3 });
+  check('no readings, day 3 -> nudge', firstTitle(insights), 'No gravity readings yet');
+  check('no readings -> evidence has no action verb', insights[0].detail.includes('Log a reading'), false);
+  check('no readings -> action is the suggested step', insights[0].action, "Log a reading to start tracking real progress instead of the recipe's estimate.");
+}
 
-// Flat + in-range attenuation -> good
+// Flat + in-range attenuation -> good, with a suggested next step
 {
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.012 }, { date: '2026-06-11', sg: 1.0115 }] };
   const stats = { daysSinceStart: 10, attenuationToDate: 77 }; // (50-11.5)/50*100 ~ 77
-  check('flat + in-range attenuation -> good', firstLevel(getAdvisorInsights(batch, recipe, stats)), 'good');
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('flat + in-range attenuation -> good', firstLevel(insights), 'good');
+  check('good insight has a suggested next step', typeof insights[0].action, 'string');
 }
 
-// Flat + below-range attenuation -> warning
+// Flat + below-range attenuation -> warning, with a suggested next step
 {
   const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.025 }, { date: '2026-06-11', sg: 1.0245 }] };
   const stats = { daysSinceStart: 10, attenuationToDate: 51 };
-  check('flat + below-range attenuation -> warning', firstLevel(getAdvisorInsights(batch, recipe, stats)), 'warning');
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('flat + below-range attenuation -> warning', firstLevel(insights), 'warning');
+  check('warning insight has a suggested next step', insights[0].action, 'Double-check pitch rate and temperature, and consider a gentle rouse before assuming it\'s finished.');
 }
 
 // Still dropping, past due day, below range -> info

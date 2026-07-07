@@ -138,6 +138,8 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .advisor-item.level-warning .advisor-title{color:var(--red2)}
 .advisor-item.level-info .advisor-title{color:var(--blue2)}
 .advisor-detail{font-size:13px;color:var(--text2);line-height:1.55}
+.advisor-action{font-size:13px;color:var(--copper2);line-height:1.55;margin-top:6px}
+.advisor-heading{margin-top:12px}
 .today-panel{margin-bottom:8px}
 .today-item{cursor:pointer;transition:border-color .15s}
 .today-item:hover{border-color:var(--copper)}

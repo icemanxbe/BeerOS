@@ -46,7 +46,7 @@ function renderTodaySummary() {
   if (activeCount === 0) return '';
   if (!items.length) {
     return `<div class="today-panel">
-      <h2>Today</h2>
+      <h2>Continue Brewing</h2>
       <p class="stat-hint">Nothing needs your attention right now — ${activeCount} batch${activeCount === 1 ? '' : 'es'} fermenting normally.</p>
     </div>`;
   }
@@ -54,10 +54,11 @@ function renderTodaySummary() {
     <div class="advisor-item level-${insight.level} today-item" onclick="openBatch('${batch.id}')">
       <div class="advisor-title">${batch.name} &middot; ${insight.title}</div>
       <div class="advisor-detail">${insight.detail}</div>
+      ${insight.action ? `<div class="advisor-action">${insight.action}</div>` : ''}
       <div class="today-continue">Continue batch &rarr;</div>
     </div>`
   ).join('');
-  return `<div class="today-panel"><h2>Today</h2><div class="advisor-card">${rows}</div></div>`;
+  return `<div class="today-panel"><h2>Continue Brewing</h2><div class="advisor-card">${rows}</div></div>`;
 }
 
 function renderBatchesPage() {
@@ -248,6 +249,8 @@ function renderBatchDetail(id) {
       </div>
     </div>
 
+    ${renderAdvisorInsights(b, recipe, s)}
+
     <div class="stat-row">
       <div class="stat"><span class="stat-val">${s.og ? s.og.toFixed(3) : '—'}</span><span class="stat-label">OG${s.og && !s.ogIsActual ? ' (est.)' : ''}</span></div>
       <div class="stat"><span class="stat-val">${s.fg ? s.fg.toFixed(3) : '—'}</span><span class="stat-label">Latest SG</span></div>
@@ -258,8 +261,6 @@ function renderBatchDetail(id) {
     ${s.projection ? renderProjectionHint(s.projection, b.gravityLogs[b.gravityLogs.length - 1].date) : ''}
     ${!s.ogIsActual && s.og ? '<p class="stat-hint">OG shown is the recipe\'s computed target — log your first real gravity reading to replace it with the actual number for this batch.</p>' : ''}
     ${recipe ? `<div class="bjcp-range-note">Recipe target: OG ${s.recipeStats.og.toFixed(3)} &middot; ABV ${s.recipeStats.abv.toFixed(1)}% &middot; IBU ${s.recipeStats.ibu.toFixed(0)} &middot; SRM ${s.recipeStats.srm.toFixed(1)}</div>` : ''}
-
-    ${renderAdvisorInsights(b, recipe, s)}
 
     ${recipe ? renderStepChecklist(b, recipe) : ''}
 
@@ -293,8 +294,9 @@ function renderAdvisorInsights(b, recipe, stats) {
   const rows = insights.map(i => `<div class="advisor-item level-${i.level}">
     <div class="advisor-title">${i.title}</div>
     <div class="advisor-detail">${i.detail}</div>
+    ${i.action ? `<div class="advisor-action"><strong>Suggested next step:</strong> ${i.action}</div>` : ''}
   </div>`).join('');
-  return `<div class="advisor-card">${rows}</div>`;
+  return `<h2 class="advisor-heading">Advisor</h2><div class="advisor-card">${rows}</div>`;
 }
 
 function renderStepChecklist(b, recipe) {

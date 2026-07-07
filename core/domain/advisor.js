@@ -49,7 +49,8 @@ function getAdvisorInsights(batch, recipe, stats) {
     if (daysSinceStart < 2) return [];
     return [{
       level: 'info', title: 'No gravity readings yet',
-      detail: `It's been ${daysSinceStart} day(s) since you started this batch. Log a reading to start tracking real progress instead of the recipe's estimate.`
+      detail: `It's been ${daysSinceStart} day(s) since you started this batch.`,
+      action: `Log a reading to start tracking real progress instead of the recipe's estimate.`
     }];
   }
 
@@ -71,17 +72,20 @@ function getAdvisorInsights(batch, recipe, stats) {
     if (isFlat && att >= attenuationLow - ADVISOR_ATTENUATION_SLACK) {
       insights.push({
         level: 'good', title: 'Looks done fermenting',
-        detail: `Gravity hasn't moved in your last two readings (${prev.sg.toFixed(3)} → ${last.sg.toFixed(3)}), and attenuation is ${att.toFixed(0)}% — within this yeast's usual ${attenuationLow}-${attenuationHigh}% range.${completeStep ? ` Check the "${completeStep.title}" step below if you haven't.` : ''}`
+        detail: `Gravity hasn't moved in your last two readings (${prev.sg.toFixed(3)} → ${last.sg.toFixed(3)}), and attenuation is ${att.toFixed(0)}% — within this yeast's usual ${attenuationLow}-${attenuationHigh}% range.`,
+        action: completeStep ? `Check the "${completeStep.title}" step below if you haven't, then proceed with packaging when you're ready.` : null
       });
     } else if (isFlat && att < attenuationLow - ADVISOR_ATTENUATION_SLACK) {
       insights.push({
         level: 'warning', title: 'Gravity flat below expected attenuation',
-        detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation — double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
+        detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation.`,
+        action: `Double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
       });
     } else if (!isFlat && completeStepDue && att < attenuationLow) {
       insights.push({
         level: 'info', title: 'Still fermenting past the usual check-in day',
-        detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far). Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
+        detail: `You're ${daysSinceStart - completeStep.day} day(s) past this recipe's usual "${completeStep.title}" check-in, and gravity is still dropping (${att.toFixed(0)}% so far).`,
+        action: `Not necessarily a problem — some batches just run longer — but worth a closer look if it keeps going.`
       });
     }
   }
