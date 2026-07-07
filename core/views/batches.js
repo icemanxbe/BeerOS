@@ -317,9 +317,10 @@ function renderLastTime(b, s, lastTime) {
   if (!lastTime) return '';
   const fmtSG = v => v === null ? '—' : v.toFixed(3);
   const fmtPct = v => v === null ? '—' : `${v.toFixed(0)}%`;
+  const gravityLabel = b.status === 'done' ? 'Final SG' : 'Current SG';
   const rows = [
     ['OG', fmtSG(s.og), fmtSG(lastTime.og)],
-    ['Latest / Final SG', fmtSG(s.fg), fmtSG(lastTime.finalSG)],
+    [gravityLabel, fmtSG(s.fg), fmtSG(lastTime.finalSG)],
     ['Attenuation', fmtPct(s.attenuationToDate), fmtPct(lastTime.attenuation)],
     ['Days', String(s.daysSinceStart), lastTime.daysToComplete !== null ? String(lastTime.daysToComplete) : '—'],
     ['Notes', b.notes || '—', lastTime.notes || '—']

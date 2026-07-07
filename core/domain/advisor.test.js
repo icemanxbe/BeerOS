@@ -58,6 +58,25 @@ check('no readings, day 1 -> no insight', getAdvisorInsights({ ...baseBatch }, r
   const insights = getAdvisorInsights(batch, recipe, stats);
   check('flat + below-range attenuation -> warning', firstLevel(insights), 'warning');
   check('warning insight has a suggested next step', insights[0].action, 'Double-check pitch rate and temperature, and consider a gentle rouse before assuming it\'s finished.');
+  check('warning detail has no temp note without sensor data', insights[0].detail.includes('logged temperature'), false);
+}
+
+// Same stall, but with a real cold sensor reading (below recipe.fermentTempC.low)
+// on the latest log -> the warning names it as a plausible explanation
+{
+  const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.025 }, { date: '2026-06-11', sg: 1.0245, tempC: 14.2 }] };
+  const stats = { daysSinceStart: 10, attenuationToDate: 51 };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('cold reading -> warning detail cites it', insights[0].detail.includes('14.2°C, below this recipe\'s 18-20°C range'), true);
+}
+
+// Same stall, but the latest sensor reading is IN range -> no temp note added
+// (a stall with normal temperature shouldn't imply a temperature cause)
+{
+  const batch = { ...baseBatch, gravityLogs: [{ date: '2026-06-01', sg: 1.050 }, { date: '2026-06-10', sg: 1.025 }, { date: '2026-06-11', sg: 1.0245, tempC: 19.0 }] };
+  const stats = { daysSinceStart: 10, attenuationToDate: 51 };
+  const insights = getAdvisorInsights(batch, recipe, stats);
+  check('in-range reading -> no temp note', insights[0].detail.includes('logged temperature'), false);
 }
 
 // Still dropping, past due day, below range -> info

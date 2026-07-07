@@ -33,6 +33,20 @@ function getPersonalPaceInsight(batch, recipe, stats) {
   };
 }
 
+// Folds real temperature evidence (from a hooked-up sensor — see mergeTelemetry
+// in state.js) into the existing stall warning rather than a separate
+// temperature insight: a cold reading is one of the most common real
+// explanations for a stalled fermentation, so when the data is there, name
+// it as evidence instead of leaving the brewer to guess. Silent whenever no
+// device is reporting temperature, or the latest reading is in range.
+function getColdTempNote(batch, recipe) {
+  const withTemp = batch.gravityLogs.filter(g => g.tempC !== undefined && g.tempC !== null);
+  if (!withTemp.length) return '';
+  const latestTemp = withTemp[withTemp.length - 1].tempC;
+  if (latestTemp >= recipe.fermentTempC.low) return '';
+  return ` Your last logged temperature was ${latestTemp.toFixed(1)}°C, below this recipe's ${recipe.fermentTempC.low}-${recipe.fermentTempC.high}°C range — that alone could explain it.`;
+}
+
 // The next unchecked NON-TRIVIAL step in the recipe's own chronological order
 // (getRecipeSteps already returns steps sorted by day), skipping brew-day/
 // check-fermentation so this doesn't silently stay stuck on "next: brew day"
@@ -104,7 +118,7 @@ function getAdvisorInsights(batch, recipe, stats) {
     } else if (isFlat && att < attenuationLow - ADVISOR_ATTENUATION_SLACK) {
       insights.push({
         level: 'warning', title: 'Gravity flat below expected attenuation',
-        detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation.`,
+        detail: `Gravity is flat at ${last.sg.toFixed(3)} (${att.toFixed(0)}% attenuation), short of this yeast's usual ${attenuationLow}-${attenuationHigh}% range. This can mean a stalled fermentation.${getColdTempNote(batch, recipe)}`,
         action: `Double-check pitch rate and temperature, and consider a gentle rouse before assuming it's finished.`
       });
     } else if (personalPace) {
