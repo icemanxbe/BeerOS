@@ -70,11 +70,19 @@ function renderRecipeSteps(r) {
 
 // The reverse of "Brew This Recipe" — batches already store their
 // recipeId, so this just reads that back rather than tracking it separately.
-function renderYourBatches(recipeId) {
-  const matches = APP.batches.filter(b => b.recipeId === recipeId).sort((a, b) => b.startDate.localeCompare(a.startDate));
+// The averages below (see recipe-history.js) are a plain read of your own
+// past numbers, not an Advisor rule — shown only once there's real data
+// behind them.
+function renderYourBatches(recipe) {
+  const matches = APP.batches.filter(b => b.recipeId === recipe.id).sort((a, b) => b.startDate.localeCompare(a.startDate));
   if (!matches.length) return '';
+  const history = computeRecipeHistory(APP.batches, recipe.id);
+  const statParts = [];
+  if (history.avgAttenuation !== null) statParts.push(`avg attenuation ${history.avgAttenuation.toFixed(0)}% (yeast spec: ${recipe.yeast.attenuationLow}-${recipe.yeast.attenuationHigh}%)`);
+  if (history.avgDaysToComplete !== null) statParts.push(`avg ${history.avgDaysToComplete.toFixed(0)} day(s) to fermentation-complete`);
+  const statsLine = statParts.length ? `<p class="stat-hint">Across ${matches.length} batch${matches.length === 1 ? '' : 'es'} of this recipe: ${statParts.join(' &middot; ')} — your own numbers, not a generic estimate.</p>` : '';
   const rows = matches.map(b => `<button class="region-btn" onclick="switchPage('batches');openBatch('${b.id}')">${b.name} <span class="status-pill status-${b.status}">${b.status}</span></button>`).join('');
-  return `<h2>Your Batches</h2><div class="region-filters">${rows}</div>`;
+  return `<h2>Your Batches</h2>${statsLine}<div class="region-filters">${rows}</div>`;
 }
 
 function renderRecipeDetail(id) {
@@ -121,7 +129,7 @@ function renderRecipeDetail(id) {
     <div class="bjcp-range-note">BJCP ${r.styleCode} target: OG ${r.bjcpRange.og[0]}-${r.bjcpRange.og[1]} &middot; FG ${r.bjcpRange.fg[0]}-${r.bjcpRange.fg[1]} &middot; ABV ${r.bjcpRange.abv[0]}-${r.bjcpRange.abv[1]}% &middot; IBU ${r.bjcpRange.ibu[0]}-${r.bjcpRange.ibu[1]} &middot; SRM ${r.bjcpRange.srm[0]}-${r.bjcpRange.srm[1]}</div>
     ${r.commercialInspiration ? `<div class="clone-disclaimer">This is a homebrew approximation inspired by ${r.name.replace(/-Inspired.*/, '')}'s real published ABV (${r.realAbv}%) and publicly known style/character — not the actual proprietary commercial recipe.</div>` : ''}
     ${waterProfileNote}
-    ${renderYourBatches(r.id)}
+    ${renderYourBatches(r)}
 
     <h2>Grain Bill</h2>
     <div class="table-scroll"><table class="ingredient-table"><thead><tr><th>Fermentable</th><th>Weight</th><th>Potential</th><th>Color</th></tr></thead><tbody>${grainRows}</tbody></table></div>

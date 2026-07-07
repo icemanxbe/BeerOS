@@ -19,13 +19,15 @@ A self-hosted batch tracker and reference library for home beer brewers. No buil
 
 **Ingredient libraries** — browsable reference views for 32 malts/grains, 16 hop varieties, 20 yeast strains, and water chemistry (6 brewing salts + 4 classic historical city water profiles), independent of any specific recipe. Every entry cross-links to the recipes that use it and back — a miss shows plain text rather than risking a wrong link, so coverage grows as the libraries do rather than needing new code.
 
+**Recipe history** — every recipe's detail page shows "Your Batches": every batch you've actually brewed from it, plus a plain average of your own attenuation and days-to-fermentation-complete across them once there are two or more to average — your own numbers, not a generic estimate, and never shown until there's real data behind it.
+
 **Brewing Tools** — live calculators for OG (grain bill), ABV (standard + high-gravity), IBU (Tinseth), color (Morey SRM/EBC), strike water temperature, priming sugar (bottle carbonation), force carbonation (kegging — pressure/temp/CO₂-volumes), residual alkalinity, yeast pitch rate, refractometer FG correction, and brewhouse efficiency. Every formula is unit-tested against a written specification (see Knowledge Base below); the force-carbonation calculator specifically interpolates over a real cited reference table rather than trusting an unverifiable formula.
 
 **Knowledge Base** ([docs/knowledge-base/](docs/knowledge-base/)) — a ~77,000-word, source-cited reference on ingredients, equipment, process, troubleshooting, recipe design, and every calculator's underlying math, written for brewers from complete beginners to all-grain veterans. This is also the spec the calculator code is verified against.
 
 ## What's not here yet
 
-- The Advisor is a lean first slice (independent gravity/attenuation/step-timing rules), not a narrative reasoning system — it notices things, it doesn't yet connect them into one story about your batch.
+- The Advisor reasons from the recipe's generic yeast spec, not your own brewing history yet — "Your Batches" on the recipe page is the first slice of personal history, but it isn't fed back into the Advisor's own rules yet (e.g. "your last four batches with this yeast averaged X%" instead of the strain's textbook range).
 - Ingredient cross-linking connects existing data (a recipe already references a malt/hop/yeast/water-profile by name); it doesn't yet synthesize new content like hop pairing or substitution suggestions.
 - Equipment/multi-vessel tracking (e.g. animating a transfer from fermenter to a bright tank).
 - PWA packaging (manifest/icons).
@@ -43,6 +45,7 @@ Run the test suites:
 node core/domain/calculators.test.js      # calculator functions vs. the KB's worked examples
 node core/domain/advisor.test.js          # Advisor insight rules
 node core/domain/ingredient-links.test.js # recipe <-> ingredient/water cross-linking, vs. real data
+node core/domain/recipe-history.test.js   # per-recipe personal-average aggregation (attenuation, days-to-complete)
 node core/data/recipes.verify.js          # every recipe's stats vs. real BJCP ranges
 python3 server.test.py                    # telemetry webhook normalization (iSpindel/Brewfather shapes)
 ```

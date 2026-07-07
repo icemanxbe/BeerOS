@@ -234,6 +234,6 @@ function computeBatchStats(batch, recipe) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     createBatch, addGravityLog, deleteGravityLog, setBatchStatus, deleteBatch, setBatchDeviceName, computeBatchStats,
-    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus, mergeTelemetry
+    getRecipeSteps, taskId, isTaskDone, toggleTask, deriveBatchStatus, refreshBatchStatus, mergeTelemetry, APP
   };
 }

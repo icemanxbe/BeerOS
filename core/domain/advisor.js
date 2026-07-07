@@ -96,7 +96,7 @@ function getAdvisorInsights(batch, recipe, stats) {
       insights.push({
         level: 'info',
         title: days <= 0 ? 'On track to finish any day now' : `On track — projected done in about ${days} day${days === 1 ? '' : 's'}`,
-        detail: `At the current rate, gravity should reach FG ${fgLow.toFixed(3)}-${fgHigh.toFixed(3)} in roughly ${days} more day(s) — the same straight-line estimate as the projection above.`
+        detail: `Based on your current gravity trend, you're progressing as expected — at this rate, final gravity should land around ${fgLow.toFixed(3)}-${fgHigh.toFixed(3)} in roughly ${days} more day(s).`
       });
     }
   }
