@@ -133,8 +133,8 @@ h2{font-family:var(--font-display);font-size:15px;color:var(--copper2);letter-sp
 .advisor-item.level-good{border-left-color:var(--green)}
 .advisor-item.level-warning{border-left-color:var(--red)}
 .advisor-item.level-info{border-left-color:var(--blue)}
-.advisor-title{font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:.3px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.advisor-icon{font-size:15px;line-height:1}
+.advisor-title{font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:.3px;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px}
+.advisor-icon{font-size:15px;line-height:1.5}
 .advisor-item.level-good .advisor-title{color:var(--green2)}
 .advisor-item.level-warning .advisor-title{color:var(--red2)}
 .advisor-item.level-info .advisor-title{color:var(--blue2)}
